@@ -159,18 +159,23 @@ def main():
     print(f"{'='*50}")
 
     # 8. 更新 README 回测结果
-    update_readme_md(strategy_perf, current_regime_name, dd_info, var_val, best_sharpe_name, best_return_name)
+    regime_counts = {}
+    if labels is not None:
+        for i, name in regime_names.items():
+            regime_counts[name] = int(sum(labels == i))
+    update_readme_md(strategy_perf, current_regime_name, dd_info, var_val,
+                     best_sharpe_name, best_return_name, regime_counts)
 
     print("\n✅ 完成！可视化报告和 README 已更新。")
 
 
-def update_readme_md(perf, regime, dd_info, var_val, best_sharpe, best_return):
+def update_readme_md(perf, regime, dd_info, var_val, best_sharpe, best_return, regime_counts=None):
     """更新 README 中的回测结果表格"""
     readme_path = "README.md"
     if not os.path.exists(readme_path):
         return
 
-    # 生成策略表格
+    # 策略表格
     table_lines = [
         "| 策略 | 收益率 | Sharpe | 最大回撤 | 交易次数 |",
         "|------|--------|--------|---------|---------|",
@@ -183,10 +188,21 @@ def update_readme_md(perf, regime, dd_info, var_val, best_sharpe, best_return):
             f"{m['num_trades']} |"
         )
 
+    # 市场状态表格
+    regime_lines = [
+        "| 市场状态 | 天数 | 占比 |",
+        "|---------|------|------|",
+    ]
+    if regime_counts:
+        total = sum(regime_counts.values())
+        for name in ["震荡市", "牛市", "熊市"]:
+            cnt = regime_counts.get(name, 0)
+            pct = cnt / total * 100 if total > 0 else 0
+            regime_lines.append(f"| {name} | {cnt} | {pct:.1f}% |")
+
     with open(readme_path, "r") as f:
         content = f.read()
 
-    # 替换或追加结果章节
     results_block = f"""---
 
 ## 最新回测结果 ({datetime.now().strftime('%Y-%m-%d')})
@@ -195,13 +211,23 @@ def update_readme_md(perf, regime, dd_info, var_val, best_sharpe, best_return):
 
 ### 策略绩效
 
-{'    '.join(table_lines)}
+{chr(10).join(table_lines)}
 
 ### 市场状态
 
-- 分类: {regime}
-- VaR(95%): {var_val*100:.2f}%
-- 当前回撤: {dd_info['dd_pct']*100:.2f}% ({dd_info['level']})
+通过 KMeans 聚类识别三种市场状态，各状态占比：
+
+{chr(10).join(regime_lines)}
+
+**当前市场状态**: {regime}
+
+### 风险分析
+
+| 指标 | 值 | 说明 |
+|------|-----|------|
+| VaR(95%) | {var_val*100:.2f}% | 每日最大预期损失（95%置信水平） |
+| 当前回撤 | {dd_info['dd_pct']*100:.2f}% | 距峰值回落幅度 |
+| 回撤状态 | {dd_info['level']} | 硬止损-8%/软预警-5% |
 
 ### 最佳策略
 
