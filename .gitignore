@@ -14,8 +14,7 @@ venv/
 .vscode/
 .idea/
 
-# Output
-output/reports/
+# Output (only ignore models and logs, keep reports for GitHub Pages)
 output/models/
 output/logs/
 
