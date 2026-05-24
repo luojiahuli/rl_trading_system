@@ -10,10 +10,11 @@ from .qa_agent import QAAgent
 from .viz_agent import VisualizationAgent
 from .feishu_agent import FeishuPushAgent
 from .report_agent import ReportGeneratorAgent
+from .storage_agent import StorageAgent
 
 
 def build_daily_pipeline() -> list:
-    """构建每日交易管线"""
+    """构建每日交易管线（含存储 Agent）"""
     return [
         HotSectorMiningAgent(),
         DataFetchAgent(),
@@ -24,6 +25,7 @@ def build_daily_pipeline() -> list:
         ReportGeneratorAgent(),
         VisualizationAgent(),
         FeishuPushAgent(),
+        StorageAgent(),              # ← 持久化所有结果到 SQLite
     ]
 
 
@@ -32,5 +34,5 @@ __all__ = [
     "HotSectorMiningAgent", "DataFetchAgent", "TimeSeriesSignalAgent",
     "RLTradingAgent", "MultiStrategyAgent", "RiskManagementAgent",
     "QAAgent", "VisualizationAgent", "FeishuPushAgent",
-    "ReportGeneratorAgent", "build_daily_pipeline",
+    "ReportGeneratorAgent", "StorageAgent", "build_daily_pipeline",
 ]

@@ -12,7 +12,8 @@ from datetime import datetime
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from src.agents import AgentContext, OrchestratorAgent, build_daily_pipeline
-from config import REPORT_DIR, LOG_DIR, OUTPUT_DIR
+from src.storage import DatabaseManager, MessageBus
+from config import REPORT_DIR, LOG_DIR, OUTPUT_DIR, DB_PATH
 
 
 def run_daily_analysis(date_str: str = None) -> AgentContext:
@@ -26,9 +27,13 @@ def run_daily_analysis(date_str: str = None) -> AgentContext:
 
     print(f"🚀 启动 {date_str} 量化交易分析...")
 
+    # 初始化基础设施
+    bus = MessageBus()
+    db = DatabaseManager(DB_PATH).connect()
+
     context = AgentContext(date=date_str)
     pipeline = build_daily_pipeline()
-    orchestrator = OrchestratorAgent(pipeline)
+    orchestrator = OrchestratorAgent(pipeline, message_bus=bus, database=db)
 
     print(f"📋 Agent 管线: {[a.name for a in pipeline]}")
     context = orchestrator.execute(context)
@@ -44,11 +49,17 @@ def run_daily_analysis(date_str: str = None) -> AgentContext:
     print(f"  市场状态: {context.regime}")
     print(f"  可视化: {context.viz_path}")
 
+    # 数据库统计
+    if db:
+        stats = db.table_stats()
+        print(f"  数据库记录: {sum(stats.values())} 条 ({stats.get('model_labels', 0)} 标签)")
+
     if context.errors:
         print(f"  ❌ 错误: {len(context.errors)} 个")
         for e in context.errors:
             print(f"    - {e}")
 
+    db.close()
     return context
 
 

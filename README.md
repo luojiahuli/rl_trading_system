@@ -2,24 +2,43 @@
 
 基于 **强化学习 + 多智能体架构** 的 A 股每日动态机会点挖掘系统。从新闻热点出发，融合时间序列信号与 RL 决策，通过多策略回测匹配最优市场状态，最终推送可视化结果到飞书。
 
+系统内置 **SQLite 数据库后台** 持久化所有计算结果，并通过 **消息总线 (MessageBus)** 实现智能体间解耦通信。
+
 ---
 
 ## 系统架构
 
 ```
-┌──────────────────────────────────────────────────────────────────────┐
-│                        OrchestratorAgent                            │
-│  每日触发: 新闻→板块→数据→信号→RL→回测→风控→报告→可视化→飞书        │
-└────┬────┬────┬────┬────┬────┬────┬────┬────┬────┬────┬────┬────┬────┘
-     │    │    │    │    │    │    │    │    │    │    │    │    │
-     ▼    ▼    ▼    ▼    ▼    ▼    ▼    ▼    ▼    ▼    ▼    ▼    ▼
- ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐
- │Hot │ │Data│ │TS │ │RL │ │Str-│ │Risk│ │Rep-│ │Viz │ │Fei-│
- │Sect│ │Fetc│ │Sig-│ │Tra-│ │ate-│ │Mgmt│ │ort │ │Agent│ │shu │
- │or  │ │h   │ │nal │ │ding│ │gy  │ │    │ │Gen │ │     │ │Push│
- │Min-│ │Agent│ │Sig-│ │Age-│ │Age-│ │Age-│ │Age-│ │     │ │Age-│
- │ing │ │     │ │nal │ │nt  │ │nt  │ │nt  │ │nt  │ │     │ │nt  │
- └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                           OrchestratorAgent                                 │
+│  每日触发: 新闻→板块→数据→信号→RL→回测→风控→报告→可视化→飞书→存储          │
+└────┬────┬────┬────┬────┬────┬────┬────┬────┬────┬────┬────┬────┬────┬────┬────┘
+     │    │    │    │    │    │    │    │    │    │    │    │    │    │    │
+     ▼    ▼    ▼    ▼    ▼    ▼    ▼    ▼    ▼    ▼    ▼    ▼    ▼    ▼    ▼
+ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐
+ │Hot │ │Data│ │TS │ │RL │ │Str-│ │Risk│ │Rep-│ │Viz │ │Fei-│ │Sto-│
+ │Sect│ │Fetc│ │Sig-│ │Tra-│ │ate-│ │Mgmt│ │ort │ │Age-│ │shu │ │rage│
+ │or  │ │h   │ │nal │ │ding│ │gy  │ │    │ │Gen │ │nt  │ │Push│ │Age-│
+ │Min-│ │Age-│ │Age-│ │Age-│ │Age-│ │Age-│ │Age-│ │    │ │Age-│ │nt  │
+ │ing │ │nt  │ │nt  │ │nt  │ │nt  │ │nt  │ │nt  │ │    │ │nt  │ │    │
+ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘
+   │      │      │      │      │      │      │      │      │      │
+   └──────┴──────┴──────┴──────┴──────┴──────┴──────┴──────┴──────┘
+                                    │
+                          ┌─────────▼──────────┐
+                          │   MessageBus       │
+                          │  (消息队列中间件)    │
+                          └─────────┬──────────┘
+                                    │
+                          ┌─────────▼──────────┐
+                          │  StorageAgent      │
+                          │  (SQLite 持久化)    │
+                          └─────────┬──────────┘
+                                    │
+                          ┌─────────▼──────────┐
+                          │   trading.db       │
+                          │  6 表 · 索引       │
+                          └────────────────────┘
 ```
 
 ### 数据流
@@ -36,13 +55,23 @@
               │
               ▼
      多策略回测 ──→ 市场状态分类 ──→ 风控检查 ──→ 报告/可视化 ──→ 飞书推送
+                                                                   │
+                                                           ┌───────▼───────┐
+                                                           │  MessageBus   │
+                                                           │  → 各 topic   │
+                                                           └───────┬───────┘
+                                                                   ▼
+                                                           ┌───────────────┐
+                                                           │  StorageAgent │
+                                                           │  → SQLite 入库│
+                                                           └───────────────┘
 ```
 
 ---
 
 ## 多智能体结构
 
-系统由 9 个 Specialist Agent 组成，通过 OrchestratorAgent 顺序编排执行：
+系统由 10 个 Specialist Agent 组成，通过 OrchestratorAgent 编排，Agent 间通过 **MessageBus** 消息队列通信：
 
 | Agent | 职责 | 核心算法 |
 |-------|------|---------|
@@ -55,6 +84,7 @@
 | **ReportGeneratorAgent** | 汇总各 Agent 结果生成综合报告 | 模板引擎 |
 | **VisualizationAgent** | PyECharts 生成 HTML 可视化报告 | 5 种图表类型 |
 | **FeishuPushAgent** | 推送分析报告到飞书 | 飞书 webhook 卡片消息 |
+| **StorageAgent** | 持久化各 Agent 结果到 SQLite | 消息订阅 + 自动打标 |
 
 ### 编排方式
 
@@ -69,10 +99,54 @@ pipeline = [
     ReportGeneratorAgent(),   # 7. 生成报告
     VisualizationAgent(),     # 8. 可视化
     FeishuPushAgent(),        # 9. 飞书推送
+    StorageAgent(),           # 10. SQLite 持久化 ← 新增
 ]
 ```
 
-每个 Agent 共享 `AgentContext` 对象，前一 Agent 的输出作为后一 Agent 的输入上下文。
+每个 Agent 共享 `AgentContext`，基础设施（`MessageBus` / `DatabaseManager`）由 Orchestrator 自动注入。
+
+---
+
+## 存储层 (SQLite)
+
+所有 Agent 的计算结果最终由 **StorageAgent** 持久化到 SQLite 数据库，支持历史回溯和分析。
+
+### 数据库表结构
+
+| 表名 | 用途 | 关键字段 |
+|------|------|---------|
+| `agent_logs` | Agent 执行日志 | agent_name, date, status, execution_time_ms, error |
+| `hot_sectors` | 热门板块快照 | date, sector, heat_score, source, stocks_json |
+| `trading_signals` | 交易信号（含 TS 窗口关联） | date, stock, action, confidence, reason |
+| `backtest_results` | 回测结果 | date, strategy_name, total_return, sharpe_ratio, max_drawdown |
+| `model_labels` | **模型有效标签**（核心） | date, model_name, label_type, label_value, confidence, is_effective |
+| `market_cache` | 市场数据缓存 | stock_code, date, data_type, data_json, expires_at |
+
+### 模型标签沉淀
+
+`model_labels` 表是系统的核心设计之一 — 每次管线运行后，StorageAgent 自动：
+
+- 为交易信号打标（买入/卖出信号置信度评估）
+- 为回测策略打标（Sharpe > 0.5 标记为有效）
+- 为市场状态打标（KMeans 分类结果）
+- 为风控指标打标（VaR, 回撤等级）
+- 通过 `is_effective` 字段区分高质量 vs 低质量标签
+
+## 消息队列 (MessageBus)
+
+智能体之间通过 **进程内消息总线** 解耦通信，基于 Python `queue.Queue` 实现：
+
+```
+Agent A ──publish("sectors")──→ MessageBus ──consume──→ Agent B
+Agent B ──publish("signals")──→ MessageBus ──consume──→ Agent C
+                                        │
+                                        └── StorageAgent 订阅所有 topic
+```
+
+- **Topic 机制**: 每个 Agent 完成后 publish 到特定 topic（如 `sectors`、`signals`、`backtest`）
+- **非阻塞消费**: `consume(topic, timeout)` 支持超时，防止无限等待
+- **解耦**: Agent 不直接依赖下一个 Agent 的接口，只依赖消息格式
+- **可观测**: `message_count(topic)` 可查看积压情况
 
 ---
 
@@ -151,7 +225,12 @@ rl_trading_system/
 │   │   ├── qa_agent.py               # 本地 LLM 问答 (Qwen2.5-1.5B)
 │   │   ├── viz_agent.py              # 可视化
 │   │   ├── feishu_agent.py           # 飞书推送
-│   │   └── report_agent.py           # 报告生成
+│   │   ├── report_agent.py           # 报告生成
+│   │   └── storage_agent.py          # SQLite 持久化 ← 新增
+│   ├── storage/                      # ← 新增存储层
+│   │   ├── __init__.py
+│   │   ├── database.py               # DatabaseManager (SQLite 6 表)
+│   │   └── message_bus.py            # MessageBus (Queue 消息队列)
 │   ├── data/
 │   │   ├── fetcher.py                # AKShare 数据获取
 │   │   ├── indicators.py             # 技术指标计算
@@ -279,11 +358,52 @@ RL 决策 (第二层)    ──→  判断"是否"执行交易
 
 ---
 
+---
+
 ## 最新回测结果 (2026-05-24)
 
 **数据**: 252 个交易日合成数据（含上升/下跌/震荡三阶段）
 
 ### 策略绩效
+
+| 策略 | 收益率 | Sharpe | 最大回撤 | 交易次数 |
+|------|--------|--------|---------|---------|
+| trend_following | +29.67% | 1.669 | -8.95% | 5 |
+| mean_reversion | +3.65% | 0.310 | -12.59% | 6 |
+| breakout | +0.00% | 0.000 | 0.00% | 0 |
+| momentum | -13.52% | -0.827 | -18.00% | 4 |
+
+### 市场状态
+
+通过 KMeans 聚类识别三种市场状态，各状态占比：
+
+| 市场状态 | 天数 | 占比 |
+|---------|------|------|
+| 震荡市 | 91 | 39.2% |
+| 牛市 | 79 | 34.1% |
+| 熊市 | 62 | 26.7% |
+
+**当前市场状态**: 震荡市
+
+### 风险分析
+
+| 指标 | 值 | 说明 |
+|------|-----|------|
+| VaR(95%) | -2.13% | 每日最大预期损失（95%置信水平） |
+| 当前回撤 | -9.55% | 距峰值回落幅度 |
+| 回撤状态 | normal | 硬止损-8%/软预警-5% |
+
+### 最佳策略
+
+- **最佳 Sharpe**: trend_following (1.669)
+- **最佳收益**: trend_following (29.67%)
+
+### 可视化报告
+
+![报告截图](output/reports/daily_report_20260524.html)
+
+
+## 策略绩效
 
 | 策略 | 收益率 | Sharpe | 最大回撤 | 交易次数 |
 |------|--------|--------|---------|---------|

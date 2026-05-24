@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""完整回测管线：合成数据 → 策略回测 → 市场分类 → 风控 → 可视化报告"""
+"""完整回测管线：合成数据 → 策略回测 → 市场分类 → 风控 → 可视化报告 → 数据库"""
 import os
 import sys
 import numpy as np
@@ -9,13 +9,16 @@ from datetime import datetime
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from src.agents.base import AgentContext
+from src.agents.storage_agent import StorageAgent
 from src.backtest.strategies import get_all_strategies
 from src.backtest.engine import BacktestEngine
 from src.backtest.regime import MarketRegimeClassifier
 from src.risk.manager import RiskManager
 from src.data.indicators import compute_indicators
 from src.viz.charts import create_report_html
-from config import REPORT_DIR, OUTPUT_DIR
+from src.storage import DatabaseManager, MessageBus
+from config import REPORT_DIR, OUTPUT_DIR, DB_PATH
+
 
 def generate_synthetic_data(n=252, seed=42):
     """生成合成 OHLCV 数据"""
@@ -41,6 +44,11 @@ def generate_synthetic_data(n=252, seed=42):
 
 def main():
     os.makedirs(REPORT_DIR, exist_ok=True)
+
+    # 初始化基础设施
+    bus = MessageBus()
+    db = DatabaseManager(DB_PATH).connect()
+    print(f"🗄️  数据库: {DB_PATH}")
 
     # 1. 生成数据
     print("📊 生成合成交易数据...")
@@ -95,25 +103,27 @@ def main():
     # 5. 构建 AgentContext
     print("\n📦 构建分析上下文...")
     date_str = datetime.now().strftime("%Y-%m-%d")
-    context = AgentContext(date=date_str)
+    context = AgentContext(date=date_str, bus=bus, db=db)
 
     # 热门板块（模拟）
-    context.hot_sectors = [
+    hot_sectors = [
         {"sector": "人工智能", "heat_score": 95, "summary": "政策利好+产业突破", "stocks": ["000001", "000002"]},
         {"sector": "半导体", "heat_score": 88, "summary": "国产替代加速", "stocks": ["000003", "000004"]},
         {"sector": "新能源", "heat_score": 82, "summary": "产业链景气度提升", "stocks": ["000005", "000006"]},
         {"sector": "机器人", "heat_score": 78, "summary": "人形机器人产业进展", "stocks": ["000007", "000008"]},
         {"sector": "低空经济", "heat_score": 72, "summary": "政策试点扩大", "stocks": ["000009", "000010"]},
     ]
+    context.hot_sectors = hot_sectors
 
     # RL 模拟信号
-    context.rl_signals = [
+    rl_signals = [
         {"stock": "000001.XSHE", "action": "buy", "confidence": 0.85, "reason": "TS突破+RSI适中"},
         {"stock": "000002.XSHE", "action": "buy", "confidence": 0.72, "reason": "放量突破Bollinger上轨"},
         {"stock": "000003.XSHG", "action": "buy", "confidence": 0.68, "reason": "均线金叉+量比>1.5"},
         {"stock": "000004.XSHG", "action": "sell", "confidence": 0.76, "reason": "RSI>70超买"},
         {"stock": "000005.XSHE", "action": "hold", "confidence": 0.55, "reason": "震荡区间等待方向"},
     ]
+    context.rl_signals = rl_signals
 
     # 回测结果
     context.backtest_results = backtest_results
@@ -141,14 +151,19 @@ def main():
         "position_size": risk.position_sizing(100000, 0.02, 0.05, df["close"].iloc[-1]),
     }
 
-    # 6. 生成可视化报告
+    # 6. 持久化到 SQLite（走 StorageAgent 逻辑）
+    print("\n💾 持久化到数据库...")
+    storage = StorageAgent()
+    context = storage.execute(context)
+
+    # 7. 生成可视化报告
     print("🎨 生成可视化报告...")
     date_num = date_str.replace("-", "")
     output_path = os.path.join(REPORT_DIR, f"daily_report_{date_num}.html")
     context.viz_path = create_report_html(context, output_path)
     print(f"   报告已生成: {output_path}")
 
-    # 7. 输出摘要
+    # 8. 输出摘要
     print(f"\n{'='*50}")
     print(f"📊 分析完成: {date_str}")
     print(f"  热门板块: {len(context.hot_sectors)} 个")
@@ -156,9 +171,18 @@ def main():
     print(f"  回测次数: {len(context.backtest_results)} 次")
     print(f"  市场状态: {context.regime}")
     print(f"  可视化: {context.viz_path}")
+    if db:
+        stats = db.table_stats()
+        print(f"  数据库记录: {sum(stats.values())} 条")
+        print(f"    - agent_logs: {stats.get('agent_logs', 0)}")
+        print(f"    - hot_sectors: {stats.get('hot_sectors', 0)}")
+        print(f"    - trading_signals: {stats.get('trading_signals', 0)}")
+        print(f"    - backtest_results: {stats.get('backtest_results', 0)}")
+        print(f"    - model_labels: {stats.get('model_labels', 0)}")
+        print(f"    - market_cache: {stats.get('market_cache', 0)}")
     print(f"{'='*50}")
 
-    # 8. 更新 README 回测结果
+    # 9. 更新 README 回测结果
     regime_counts = {}
     if labels is not None:
         for i, name in regime_names.items():
@@ -166,6 +190,7 @@ def main():
     update_readme_md(strategy_perf, current_regime_name, dd_info, var_val,
                      best_sharpe_name, best_return_name, regime_counts)
 
+    db.close()
     print("\n✅ 完成！可视化报告和 README 已更新。")
 
 
@@ -175,7 +200,6 @@ def update_readme_md(perf, regime, dd_info, var_val, best_sharpe, best_return, r
     if not os.path.exists(readme_path):
         return
 
-    # 策略表格
     table_lines = [
         "| 策略 | 收益率 | Sharpe | 最大回撤 | 交易次数 |",
         "|------|--------|--------|---------|---------|",
@@ -188,7 +212,6 @@ def update_readme_md(perf, regime, dd_info, var_val, best_sharpe, best_return, r
             f"{m['num_trades']} |"
         )
 
-    # 市场状态表格
     regime_lines = [
         "| 市场状态 | 天数 | 占比 |",
         "|---------|------|------|",
@@ -240,7 +263,6 @@ def update_readme_md(perf, regime, dd_info, var_val, best_sharpe, best_return, r
 
 """
 
-    # 替换已有结果区块或追加
     marker = "## 最新回测结果"
     if marker in content:
         before = content.split(marker)[0]
@@ -251,7 +273,6 @@ def update_readme_md(perf, regime, dd_info, var_val, best_sharpe, best_return, r
             after = ""
         content = before + results_block + "\n" + after
     else:
-        # 在路线图前插入
         roadmap_marker = "## 路线图"
         if roadmap_marker in content:
             content = content.replace(roadmap_marker, results_block + "\n" + roadmap_marker)

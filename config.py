@@ -45,3 +45,6 @@ OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "output")
 REPORT_DIR = os.path.join(OUTPUT_DIR, "reports")
 MODEL_DIR = os.path.join(OUTPUT_DIR, "models")
 LOG_DIR = os.path.join(OUTPUT_DIR, "logs")
+
+# ====== 数据库 ======
+DB_PATH = os.path.join(OUTPUT_DIR, "trading.db")
