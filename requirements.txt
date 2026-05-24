@@ -1,0 +1,24 @@
+# 智能量化交易系统 - 依赖
+
+# === 数据 ===
+akshare>=1.14.0
+pandas>=1.5.0
+numpy>=1.24.0
+
+# === 强化学习 ===
+stable-baselines3[extra]>=2.0.0
+gymnasium>=0.29.0
+
+# === 技术指标 ===
+ta>=0.11.0
+
+# === NLP ===
+jieba>=0.42.1
+snownlp>=0.12.3
+
+# === 可视化 ===
+pyecharts>=2.0.0
+
+# === 工具 ===
+requests>=2.31.0
+scikit-learn>=1.2.0
