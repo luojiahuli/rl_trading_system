@@ -2,68 +2,120 @@
 """热门板块挖掘 Agent"""
 from ..agents.base import AgentContext, BaseAgent
 from ..data.sector_map import extract_hot_sectors_from_news
-import akshare as ak
+import requests
+import json
+
+
+def _fetch_sina_news() -> list:
+    """从新浪财经获取最新新闻"""
+    try:
+        r = requests.get(
+            "https://feed.mix.sina.com.cn/api/roll/get",
+            params={"pageid": 153, "lid": 2516, "k": "", "num": 10, "page": 1},
+            timeout=10,
+            headers={"User-Agent": "Mozilla/5.0"},
+        )
+        data = r.json()
+        items = []
+        for item in data.get("result", {}).get("data", []):
+            items.append({
+                "source": "sina",
+                "title": item.get("title", ""),
+                "content": item.get("intro", ""),
+            })
+        return items
+    except Exception as e:
+        return []
+
+
+def _fetch_eastmoney_sectors() -> list:
+    """从东方财富获取概念板块热度排行"""
+    try:
+        r = requests.get(
+            "https://push2.eastmoney.com/api/qt/clist/get",
+            params={
+                "pn": 1, "pz": 20, "po": 1, "np": 1,
+                "fltt": 2, "invt": 2, "fid": "f3",
+                "fs": "m:90+t:2",
+                "fields": "f12,f14,f3",
+            },
+            timeout=10,
+            headers={"User-Agent": "Mozilla/5.0"},
+        )
+        data = r.json()
+        sectors = []
+        for item in data.get("data", {}).get("diff", []):
+            code = item.get("f12", "")
+            name = item.get("f14", "")
+            change = item.get("f3", 0)
+            if name and change is not None:
+                sectors.append({
+                    "sector": name,
+                    "heat_score": round(float(change) * 10 + 60, 1),  # 涨跌幅转热度
+                    "summary": f"今日涨幅{change}%",
+                    "stocks": [],
+                })
+        # 按热度排序
+        sectors.sort(key=lambda x: -x["heat_score"])
+        return sectors[:10]
+    except Exception as e:
+        return []
 
 
 class HotSectorMiningAgent(BaseAgent):
     name = "hot_sector_mining"
-    description = "从央视新闻联播、政策新闻中挖掘热门板块"
+    description = "从新闻/板块行情中挖掘热门板块"
 
     def execute(self, context: AgentContext) -> AgentContext:
         news_items = []
 
-        # 1. 央视新闻联播
-        try:
-            cctv = ak.news_cctv(date=context.date)
-            if not cctv.empty:
-                for _, row in cctv.iterrows():
-                    news_items.append({
-                        "source": "cctv",
-                        "title": str(row.get("title", "")),
-                        "content": str(row.get("content", "")),
-                    })
-        except Exception as e:
-            context.warnings.append(f"央视新闻获取失败: {e}")
+        # 1. 尝试新浪财经新闻
+        news_items = _fetch_sina_news()
 
-        # 2. 如果没获取到新闻，用本地板块热度数据
+        # 2. 尝试东方财富板块数据（不依赖 akshare）
         if not news_items:
-            try:
-                boards = ak.stock_board_concept_name_em()
-                if not boards.empty and "名称" in boards.columns:
-                    hot_sectors = []
-                    for _, row in boards.head(10).iterrows():
-                        name = row.get("名称", "")
-                        hot_sectors.append({
-                            "sector": str(name),
-                            "heat_score": round(float(row.get("关注度", 0)), 2),
-                            "summary": f"概念板块热度排名",
-                            "stocks": [],
-                        })
-                    context.hot_sectors = hot_sectors
-                    context.news_data = news_items
-                    return context
-            except Exception as e2:
-                context.warnings.append(f"板块热度获取失败: {e2}")
+            hot_sectors = _fetch_eastmoney_sectors()
+            if hot_sectors:
+                context.hot_sectors = hot_sectors
+                context.news_data = news_items
+                context.warnings.append(f"发现 {len(hot_sectors)} 个热门板块(东方财富)")
+                return context
 
-        # 3. 提取热门板块
-        hot_sectors_raw = extract_hot_sectors_from_news(news_items)
+        # 3. 有新闻则用新闻提取板块
+        if news_items:
+            hot_sectors_raw = extract_hot_sectors_from_news(news_items)
+            hot_sectors = []
+            for sector, score in hot_sectors_raw[:8]:
+                hot_sectors.append({
+                    "sector": sector,
+                    "heat_score": score * 10,
+                    "summary": f"新闻热点",
+                    "stocks": [],
+                })
+            context.hot_sectors = hot_sectors
+            context.news_data = news_items
+            context.warnings.append(f"从 {len(news_items)} 条新闻发现 {len(hot_sectors)} 个热门板块")
+            return context
 
-        # 4. 获取对应股票代码
-        hot_sectors = []
-        for sector, score in hot_sectors_raw[:8]:
-            try:
-                df = ak.stock_board_industry_cons_em(symbol=sector)
-                stocks = df["代码"].tolist()[:10] if "代码" in df.columns else []
-            except Exception:
-                stocks = []
-            hot_sectors.append({
-                "sector": sector,
-                "heat_score": score,
-                "summary": f"新闻热点板块",
-                "stocks": stocks,
-            })
+        # 4. 最后尝试 akshare 概念板块（兼容旧接口）
+        try:
+            import akshare as ak
+            boards = ak.stock_board_concept_name_em()
+            if not boards.empty and "名称" in boards.columns:
+                hot_sectors = []
+                for _, row in boards.head(10).iterrows():
+                    name = row.get("名称", "")
+                    hot_sectors.append({
+                        "sector": str(name),
+                        "heat_score": round(float(row.get("关注度", 0)), 2),
+                        "summary": f"概念板块热度排名",
+                        "stocks": [],
+                    })
+                context.hot_sectors = hot_sectors
+                context.news_data = news_items
+                return context
+        except Exception as e2:
+            context.warnings.append(f"akshare板块也失败: {e2}")
 
-        context.hot_sectors = hot_sectors
         context.news_data = news_items
-        context.warnings.append(f"发现 {len(hot_sectors)} 个热门板块")
         return context
