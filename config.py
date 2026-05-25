@@ -14,6 +14,16 @@ FEISHU_SECRET = os.getenv("FEISHU_SECRET", "")
 START_DATE = "2024-01-01"
 END_DATE = None  # None = 至今
 
+# ====== 数据源优先级 ======
+# "akshare" = AKShare 主 + BaoStock 备（需 VPN 访问国内源）
+# "baostock" = 仅 BaoStock（外网直连，无需 VPN）
+# "auto" = 自动检测代理，有代理用 akshare，否则 baostock
+DATA_SOURCE = os.getenv("DATA_SOURCE", "auto")
+
+# ====== 代理配置 ======
+# 留空则自动检测 HTTP_PROXY / HTTPS_PROXY / ALL_PROXY 环境变量
+PROXY_URL = os.getenv("PROXY_URL", "")
+
 # ====== 板块配置 ======
 EXCLUDED_SECTORS = [
     "银行", "保险", "证券", "信托", "金融",

@@ -2,6 +2,7 @@
 
 # === 数据 ===
 akshare>=1.14.0
+baostock>=0.9.0
 pandas>=1.5.0
 numpy>=1.24.0
 

@@ -76,7 +76,7 @@
 | Agent | 职责 | 核心算法 |
 |-------|------|---------|
 | **HotSectorMiningAgent** | 从央视新闻联播、概念板块热度挖掘热门板块 | jieba 分词 + TF-IDF 关键词→板块映射 |
-| **DataFetchAgent** | 获取 A 股日线数据，计算技术指标 | AKShare, 多窗口指标计算 |
+| **DataFetchAgent** | 获取 A 股日线数据，计算技术指标 | AKShare + BaoStock 双源备份, 多窗口指标计算 |
 | **TimeSeriesSignalAgent** | 检测趋势变化、突破、反转时间窗口 | CUSUM 过滤, argrelextrema 峰值检测, Bollinger 突破 |
 | **RLTradingAgent** | 在第一层信号基础上做出买卖决策 | 启发式多因子评分 (RSI+价格位置+成交量+TS信号) |
 | **MultiStrategyAgent** | 多策略回测 + 市场状态匹配 | 4 种策略并行回测, KMeans 聚类 |
@@ -154,7 +154,8 @@ Agent B ──publish("signals")──→ MessageBus ──consume──→ Agen
 
 ### 1. 热门板块挖掘
 
-- **数据源**: 央视新闻联播 (`ak.news_cctv()`) + 概念板块热度排行 (`ak.stock_board_concept_name_em()`)
+- **数据源**: 新浪财经 / 财联社新闻 → 东方财富板块热度排行 → AKShare 概念板块 + BaoStock 日线数据
+- **外网访问**: AKShare 需 VPN 访问国内数据源；BaoStock 全球直连（无需 VPN），系统自动降级
 - **排除板块**: 银行、保险、证券、信托、金融、券商、多元金融、房地产
 - **映射方式**: 20 个预设热点板块关键词表，jieba 分词后匹配
 
@@ -264,12 +265,24 @@ pip install -r requirements.txt
 
 ### 配置
 
-编辑 `config.py`，配置飞书 Webhook：
+数据源自动选择（`config.py` 或环境变量）：
+
+```bash
+# 自动检测代理（有 VPN 用 AKShare，否则用 BaoStock）
+export DATA_SOURCE=auto
+
+# 手动指定代理地址
+export PROXY_URL=http://127.0.0.1:7890
+```
+
+飞书推送配置：
 
 ```python
 FEISHU_WEBHOOK_URL = "https://open.feishu.cn/open-apis/bot/v2/hook/your_webhook_id"
 FEISHU_SECRET = "your_signature_secret"  # 可选
 ```
+
+> **数据源说明**: 系统支持双数据源 — **AKShare**（数据最全，含板块/概念数据，需 VPN 访问国内源）和 **BaoStock**（外网直连，无需 VPN，仅历史日线）。默认自动模式，有代理时优先 AKShare，失败自动切换 BaoStock。
 
 ### 运行
 
@@ -344,7 +357,8 @@ RL 决策 (第二层)    ──→  判断"是否"执行交易
 
 | 包 | 用途 |
 |------|---------|
-| akshare | A 股数据源 |
+| akshare | A 股数据源（主） |
+| baostock | A 股数据源（备，外网直连） |
 | pandas, numpy | 数据处理 |
 | ta | 技术指标计算 |
 | jieba, snownlp | 中文分词与新闻 NLP |
@@ -463,5 +477,5 @@ RL 决策 (第二层)    ──→  判断"是否"执行交易
 - [ ] Gymnasium 交易环境 + PPO 在线训练
 - [ ] Ollama Qwen2.5-1.5B 本地问答
 - [ ] Gradio UI 面板
-- [ ] 实盘数据验证 (AKShare)
+- [x] 实盘数据验证 (AKShare + BaoStock 双源备份)
 - [ ] 多时间周期信号融合

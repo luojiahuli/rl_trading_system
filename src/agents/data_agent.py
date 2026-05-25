@@ -58,14 +58,14 @@ class DataFetchAgent(BaseAgent):
                 continue
 
             for code in stocks[:5]:
-                # AKShare 获取（5s 超时）
+                # AKShare/IP → BaoStock 获取（10s 超时）
                 try:
                     import concurrent.futures
                     with concurrent.futures.ThreadPoolExecutor() as ex:
                         f = ex.submit(fetch_stock_daily, code, START_DATE, END_DATE)
-                        df = f.result(timeout=5)
+                        df = f.result(timeout=10)
                 except Exception:
-                    df = None
+                    df = pd.DataFrame()
 
                 # AKShare 失败 → 合成数据
                 if df is None or len(df) < 30:
