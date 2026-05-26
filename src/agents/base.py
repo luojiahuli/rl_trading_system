@@ -42,6 +42,9 @@ class AgentContext:
     portfolio: dict = field(default_factory=dict)     # 持仓信息
     risk_metrics: dict = field(default_factory=dict)  # 风控指标
 
+    # === 市场研判 ===
+    market_judgement: dict = field(default_factory=dict)  # 市场整体研判结果
+
     # === 输出 ===
     report_text: str = ""
     report_html: str = ""
@@ -90,6 +93,7 @@ class BaseAgent(ABC):
             "strategy_results": context.strategy_results,
             "risk_metrics": context.risk_metrics,
             "stock_pool": context.stock_pool,
+            "market_judgement": context.market_judgement,
         }
 
     def __repr__(self) -> str:
@@ -132,6 +136,7 @@ class OrchestratorAgent(BaseAgent):
                         "rl_trading": "rl_signals",
                         "multi_strategy": "backtest",
                         "risk_management": "risk",
+                        "market_judgement": "market",
                         "report_generator": "report",
                         "visualization": "viz",
                         "feishu_push": "feishu",

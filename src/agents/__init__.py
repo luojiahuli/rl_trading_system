@@ -11,10 +11,11 @@ from .viz_agent import VisualizationAgent
 from .feishu_agent import FeishuPushAgent
 from .report_agent import ReportGeneratorAgent
 from .storage_agent import StorageAgent
+from .market_agent import MarketJudgementAgent
 
 
 def build_daily_pipeline() -> list:
-    """构建每日交易管线（含存储 Agent）"""
+    """构建每日交易管线（含存储 Agent + 市场研判）"""
     return [
         HotSectorMiningAgent(),
         DataFetchAgent(),
@@ -22,6 +23,7 @@ def build_daily_pipeline() -> list:
         RLTradingAgent(),
         MultiStrategyAgent(),
         RiskManagementAgent(),
+        MarketJudgementAgent(),      # ← 市场整体研判（新增）
         ReportGeneratorAgent(),
         VisualizationAgent(),
         FeishuPushAgent(),
@@ -34,5 +36,6 @@ __all__ = [
     "HotSectorMiningAgent", "DataFetchAgent", "TimeSeriesSignalAgent",
     "RLTradingAgent", "MultiStrategyAgent", "RiskManagementAgent",
     "QAAgent", "VisualizationAgent", "FeishuPushAgent",
-    "ReportGeneratorAgent", "StorageAgent", "build_daily_pipeline",
+    "ReportGeneratorAgent", "StorageAgent", "MarketJudgementAgent",
+    "build_daily_pipeline",
 ]

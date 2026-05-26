@@ -58,16 +58,24 @@ class DataFetchAgent(BaseAgent):
                 continue
 
             for code in stocks[:5]:
-                # AKShare/IP → BaoStock 获取（10s 超时）
+                df = pd.DataFrame()
+                # 尝试 BaoStock 获取真实数据（8s 超时）
                 try:
                     import concurrent.futures
-                    with concurrent.futures.ThreadPoolExecutor() as ex:
-                        f = ex.submit(fetch_stock_daily, code, START_DATE, END_DATE)
-                        df = f.result(timeout=10)
+                    ex = concurrent.futures.ThreadPoolExecutor()
+                    f = ex.submit(fetch_stock_daily, code, START_DATE, END_DATE)
+                    df = f.result(timeout=8)
+                    ex.shutdown(wait=False)
+                except concurrent.futures.TimeoutError:
+                    df = pd.DataFrame()
+                    ex.shutdown(wait=False)
                 except Exception:
                     df = pd.DataFrame()
-
-                # AKShare 失败 → 合成数据
+                    try:
+                        ex.shutdown(wait=False)
+                    except Exception:
+                        pass
+                # BaoStock 失败 → 合成数据
                 if df is None or len(df) < 30:
                     try:
                         df = _generate_synthetic_data(code, START_DATE, END_DATE)
@@ -125,22 +133,20 @@ def _generate_synthetic_data(code: str, start_date: str, end_date: str = None) -
 
         df = pd.DataFrame({
             "date": dates,
-            "open": prices * (1 - np.abs(np.random.randn(len(dates))) * 0.01),
-            "close": prices,
-            "high": prices * (1 + np.abs(np.random.randn(len(dates))) * 0.015),
-            "low": prices * (1 - np.abs(np.random.randn(len(dates))) * 0.015),
-            "volume": np.random.randint(100000, 10000000, len(dates)),
-            "amount": np.random.randint(1000000, 100000000, len(dates)),
-            "pct_chg": np.clip(np.random.randn(len(dates)) * 2, -10, 10),
-            "amplitude": np.abs(np.random.randn(len(dates))) * 3,
-            "turnover": np.abs(np.random.randn(len(dates))) * 2,
+            "open": pd.Series(prices * (1 - np.abs(np.random.randn(n)) * 0.01), dtype=float),
+            "close": pd.Series(prices, dtype=float),
+            "high": pd.Series(prices * (1 + np.abs(np.random.randn(n)) * 0.015), dtype=float),
+            "low": pd.Series(prices * (1 - np.abs(np.random.randn(n)) * 0.015), dtype=float),
+            "volume": pd.Series(np.random.randint(100000, 10000000, n), dtype=float),
+            "amount": pd.Series(np.random.randint(1000000, 100000000, n), dtype=float),
+            "pct_chg": pd.Series(np.clip(np.random.randn(n) * 2, -10, 10), dtype=float),
+            "amplitude": pd.Series(np.abs(np.random.randn(n)) * 3, dtype=float),
+            "turnover": pd.Series(np.abs(np.random.randn(n)) * 2, dtype=float),
         })
-        # 归一化价格到合理区间（避免随机游走导致的极端值）
-        first_close = df["close"].iloc[0]
-        df["close"] = df["close"] / first_close * base_price
-        df["open"] = df["open"] / first_close * base_price
-        df["high"] = df["high"] / first_close * base_price
-        df["low"] = df["low"] / first_close * base_price
+        # 归一化价格到合理区间
+        first_close = float(df["close"].iloc[0])
+        for col in ["close", "open", "high", "low"]:
+            df[col] = (df[col].to_numpy(dtype=float) / first_close * base_price).astype(float)
         return df
     except Exception:
         return None

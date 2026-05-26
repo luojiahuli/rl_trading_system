@@ -111,6 +111,28 @@ content = {
     }
 }
 
+# Parse market judgement section
+mj_fields = {}
+in_mj = False
+for line in lines:
+    line_s = line.strip()
+    if line_s.startswith('##') and '市场研判' in line_s:
+        in_mj = True
+        continue
+    if in_mj:
+        if line_s.startswith('|') and '|' in line_s:
+            cols = [c.strip() for c in line_s.split('|') if c.strip()]
+            if len(cols) >= 2 and cols[0] in ('市场阶段', '趋势方向', '政策预期', '置信度'):
+                mj_fields[cols[0]] = cols[1]
+        elif not line_s.startswith('|') and not line_s.startswith('|---'):
+            in_mj = False
+
+if mj_fields:
+    mj_line = ' | '.join([f'{k}:{v}' for k, v in mj_fields.items()])
+    content['zh_cn']['content'].append([{'tag': 'text', 'text': ''}])
+    content['zh_cn']['content'].append([{'tag': 'text', 'text': '📊 市场研判:'}])
+    content['zh_cn']['content'].append([{'tag': 'text', 'text': f'  {mj_line}'}])
+
 if sections['信号']:
     signals_block = [{'tag': 'text', 'text': '📈 交易信号:'}]
     for s in sections['信号'][:3]:

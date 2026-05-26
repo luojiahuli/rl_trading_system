@@ -49,6 +49,40 @@ class ReportGeneratorAgent(BaseAgent):
             if best_return:
                 parts.append(f"🏆 **最佳收益策略**: {best_return}\n")
 
+        # 市场研判
+        if context.market_judgement:
+            mj = context.market_judgement
+            parts.append("\n## 📊 市场研判\n")
+            parts.append("| 维度 | 判断 |\n|------|------|\n")
+            parts.append(f"| 市场阶段 | {mj.get('market_phase', '—')} |\n")
+            parts.append(f"| 趋势方向 | {mj.get('trend_direction', '—')} |\n")
+            parts.append(f"| 政策预期 | {mj.get('policy_outlook', '—')} |\n")
+            parts.append(f"| 置信度 | {mj.get('confidence', '—')} |\n")
+
+            d = mj.get("details", {})
+            sb = d.get("stock_breadth", {})
+            sec = d.get("sector_breadth", {})
+            idx = d.get("index_trend", {})
+
+            parts.append(
+                f"\n**市场宽度**: {sb.get('pct_above_ma50', 0)}% 股票站上MA50 "
+                f"| **板块活跃度**: {sec.get('breadth', 'unknown')} "
+                f"({sec.get('total_sectors', 0)}个热门板块)\n"
+            )
+            parts.append(
+                f"**指数**: 价格vsMA200={idx.get('price_vs_ma200_pct', 0)}% "
+                f"| 均线排列={idx.get('ma_alignment', 'mixed')} "
+                f"| RSI={idx.get('rsi_14', 50)}\n"
+            )
+
+            prediction = mj.get("next_trend", "")
+            if prediction:
+                parts.append(f"\n**走势预判**: {prediction}\n")
+
+            summary = mj.get("summary", "")
+            if summary:
+                parts.append(f"\n{summary}\n")
+
         # 风控
         if context.risk_metrics:
             dd = context.risk_metrics.get("drawdown", {})
