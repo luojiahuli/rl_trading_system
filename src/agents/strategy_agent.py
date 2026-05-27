@@ -8,12 +8,15 @@ from ..backtest.engine import BacktestEngine
 from ..backtest.regime import MarketRegimeClassifier
 
 
+from config import INITIAL_CASH
+
+
 class MultiStrategyAgent(BaseAgent):
     name = "multi_strategy"
     description = "多策略回测 + 市场状态匹配"
 
     def execute(self, context: AgentContext) -> AgentContext:
-        engine = BacktestEngine(initial_cash=100000)
+        engine = BacktestEngine(initial_cash=INITIAL_CASH)
         all_results = []
 
         # 评估每个股票上的策略表现

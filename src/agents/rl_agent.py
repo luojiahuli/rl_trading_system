@@ -7,6 +7,20 @@ from ..agents.base import AgentContext, BaseAgent
 from config import RL_BUY_POSITION_PCT, RL_ADD_POSITION_PCT, RL_STOP_LOSS
 
 
+def infer_strategy(rsi: float, price_pos: float, volume_ratio: float,
+                   pct_chg: float, ts_hits: list) -> str:
+    """根据触发条件推断匹配的策略名称"""
+    if any(s["type"] in ("valley", "up_trend_start") for s in ts_hits):
+        return "趋势跟踪"
+    if any(s["type"] in ("lower_breakout", "upper_breakout") for s in ts_hits):
+        return "突破策略"
+    if rsi < 35 or rsi > 70:
+        return "均值回归"
+    if volume_ratio > 1.5:
+        return "动量策略"
+    return "趋势跟踪"
+
+
 class RLTradingAgent(BaseAgent):
     name = "rl_trading"
     description = "强化学习交易决策 - 基于时间窗口判断买卖点"
@@ -61,9 +75,12 @@ class RLTradingAgent(BaseAgent):
                 confidence = 0
 
             if action != "hold":
+                # 推断策略类型
+                strategy = infer_strategy(rsi, price_pos, volume_ratio, pct_chg, ts_hits)
                 signals.append({
                     "stock": code,
                     "action": action,
+                    "strategy": strategy,
                     "confidence": round(confidence, 3),
                     "price": close,
                     "position_pct": RL_BUY_POSITION_PCT if action == "buy" else 1.0,

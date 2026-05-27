@@ -20,6 +20,9 @@ snownlp>=0.12.3
 # === 可视化 ===
 pyecharts>=2.0.0
 
+# === Web UI ===
+gradio>=4.0.0
+
 # === 工具 ===
 requests>=2.31.0
 scikit-learn>=1.2.0

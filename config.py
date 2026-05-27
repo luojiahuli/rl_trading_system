@@ -30,6 +30,9 @@ EXCLUDED_SECTORS = [
     "券商", "多元金融", "房地产",
 ]
 
+# ====== 资金配置 ======
+INITIAL_CASH = 1000000             # 初始资金 100 万
+
 # ====== RL 训练配置 ======
 RL_TOTAL_TIMESTEPS = 200000
 RL_LEARNING_RATE = 3e-4

@@ -46,6 +46,9 @@ class AgentContext:
     # === 市场研判 ===
     market_judgement: dict = field(default_factory=dict)  # 市场整体研判结果
 
+    # === 持仓分析 ===
+    position_analysis: dict = field(default_factory=dict)  # 持仓明细分析结果
+
     # === 输出 ===
     report_text: str = ""
     report_html: str = ""
