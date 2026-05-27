@@ -57,7 +57,7 @@ class DataFetchAgent(BaseAgent):
                 context.warnings.append(f"{sector}: 无法获取成分股")
                 continue
 
-            for code in stocks[:5]:
+            for code in stocks[:8]:
                 df = pd.DataFrame()
                 # 尝试 BaoStock 获取真实数据（8s 超时）
                 try:
@@ -68,14 +68,17 @@ class DataFetchAgent(BaseAgent):
                     ex.shutdown(wait=False)
                 except concurrent.futures.TimeoutError:
                     df = pd.DataFrame()
-                    ex.shutdown(wait=False)
+                    try:
+                        ex.shutdown(wait=False)
+                    except Exception:
+                        pass
                 except Exception:
                     df = pd.DataFrame()
                     try:
                         ex.shutdown(wait=False)
                     except Exception:
                         pass
-                # BaoStock 失败 → 合成数据
+                # 有真实数据（≥30行）直接用；不足30行才尝试合成数据补齐
                 if df is None or len(df) < 30:
                     try:
                         df = _generate_synthetic_data(code, START_DATE, END_DATE)

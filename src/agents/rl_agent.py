@@ -50,12 +50,12 @@ class RLTradingAgent(BaseAgent):
                 sell_score += 2
 
             # 最终决策
-            if buy_score >= 3 and buy_score > sell_score:
+            if buy_score >= 2 and buy_score > sell_score:
                 action = "buy"
-                confidence = min(1.0, buy_score / 6)
-            elif sell_score >= 3 and sell_score > buy_score:
+                confidence = min(1.0, buy_score / 5)
+            elif sell_score >= 2 and sell_score > buy_score:
                 action = "sell"
-                confidence = min(1.0, sell_score / 6)
+                confidence = min(1.0, sell_score / 5)
             else:
                 action = "hold"
                 confidence = 0

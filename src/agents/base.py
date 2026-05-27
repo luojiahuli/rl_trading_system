@@ -41,6 +41,7 @@ class AgentContext:
     # === 风险管理 ===
     portfolio: dict = field(default_factory=dict)     # 持仓信息
     risk_metrics: dict = field(default_factory=dict)  # 风控指标
+    trades: list = field(default_factory=list)        # 交易流水（操作记录）
 
     # === 市场研判 ===
     market_judgement: dict = field(default_factory=dict)  # 市场整体研判结果
@@ -94,6 +95,7 @@ class BaseAgent(ABC):
             "risk_metrics": context.risk_metrics,
             "stock_pool": context.stock_pool,
             "market_judgement": context.market_judgement,
+            "trades": context.trades,
         }
 
     def __repr__(self) -> str:

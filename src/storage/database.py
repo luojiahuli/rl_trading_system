@@ -138,6 +138,21 @@ class DatabaseManager:
             )
         """)
 
+        # 7. 每日交易流水（操作记录）
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS trade_journal (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                date            TEXT NOT NULL,
+                stock           TEXT NOT NULL,
+                action          TEXT NOT NULL,
+                price           REAL,
+                quantity        INTEGER,
+                pnl             REAL,
+                signal_confidence REAL,
+                created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
         # 索引
         cur.execute("CREATE INDEX IF NOT EXISTS idx_agent_logs_date ON agent_logs(date)")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_hot_sectors_date ON hot_sectors(date)")
@@ -146,6 +161,7 @@ class DatabaseManager:
         cur.execute("CREATE INDEX IF NOT EXISTS idx_model_labels_date ON model_labels(date)")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_model_labels_type ON model_labels(label_type)")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_market_cache_lookup ON market_cache(stock_code, date, data_type)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_trade_journal_date ON trade_journal(date)")
 
         self.conn.commit()
 
@@ -295,6 +311,34 @@ class DatabaseManager:
             "expires_at > datetime('now')", (stock_code, date, data_type),
         ).fetchone()
         return dict(row) if row else None
+
+    # ── 交易流水 ──────────────────────────────────────────
+
+    def save_trade_journal(self, date: str, trades: list[dict]):
+        """保存交易流水（每日操作记录）"""
+        for t in trades:
+            self.conn.execute(
+                "INSERT INTO trade_journal(date,stock,action,price,quantity,pnl,signal_confidence) "
+                "VALUES(?,?,?,?,?,?,?)",
+                (date, t.get("stock", ""), t.get("action", ""),
+                 t.get("price", 0), t.get("quantity", 0),
+                 t.get("pnl", 0), t.get("confidence", 0)),
+            )
+        self.conn.commit()
+
+    def get_trade_journal(self, date: str = None, limit: int = 50) -> list[dict]:
+        """获取交易流水，date 为空则返回最新记录"""
+        if date:
+            rows = self.conn.execute(
+                "SELECT * FROM trade_journal WHERE date=? ORDER BY created_at DESC LIMIT ?",
+                (date, limit),
+            ).fetchall()
+        else:
+            rows = self.conn.execute(
+                "SELECT * FROM trade_journal ORDER BY created_at DESC LIMIT ?",
+                (limit,),
+            ).fetchall()
+        return [dict(r) for r in rows]
 
     # ── 统计 ──────────────────────────────────────────────
 
