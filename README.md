@@ -1,44 +1,56 @@
 # 智能量化交易系统
 
-基于 **强化学习 + 多智能体架构** 的 A 股每日动态机会点挖掘系统。从新闻热点出发，融合时间序列信号与 RL 决策，通过多策略回测匹配最优市场状态，最终推送可视化结果到飞书。
+基于 **强化学习 + LLM 多智能体辩论** 混合架构的 A 股每日动态机会点挖掘系统。
 
-系统内置 **SQLite 数据库后台** 持久化所有计算结果，并通过 **消息总线 (MessageBus)** 实现智能体间解耦通信。
+## 核心特性
+
+- **双轨信号**: 原始启发式 RL 信号与 TradingAgents 风格 LLM 辩论信号并行运行
+- **多智能体辩论**: Bull/Bear 研究员交替辩论 + 三视角风险辩论 (Aggressive/Conservative/Neutral)
+- **两层 LLM 策略**: quick_thinking_llm (分析师/研究员) + deep_thinking_llm (管理者)
+- **结构化决策**: Pydantic 结构化输出 (ResearchPlan → TraderProposal → PortfolioDecision)
+- **记忆/反思**: TradingMemoryLog 记忆向量 + 事后反思 - 同股票/跨股票上下文注入
+- **SQLite 持久化**: 所有计算结果、辩论决策、记忆向量入库
 
 ---
 
 ## 系统架构
 
 ```
-┌──────────────────────────────────────────────────────────────────────────────┐
-│                           OrchestratorAgent                                 │
-│  每日触发: 新闻→板块→数据→信号→RL→回测→风控→报告→可视化→飞书→存储          │
-└────┬────┬────┬────┬────┬────┬────┬────┬────┬────┬────┬────┬────┬────┬────┬────┘
-     │    │    │    │    │    │    │    │    │    │    │    │    │    │    │
-     ▼    ▼    ▼    ▼    ▼    ▼    ▼    ▼    ▼    ▼    ▼    ▼    ▼    ▼    ▼
- ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐
- │Hot │ │Data│ │TS │ │RL │ │Str-│ │Risk│ │Rep-│ │Viz │ │Fei-│ │Sto-│
- │Sect│ │Fetc│ │Sig-│ │Tra-│ │ate-│ │Mgmt│ │ort │ │Age-│ │shu │ │rage│
- │or  │ │h   │ │nal │ │ding│ │gy  │ │    │ │Gen │ │nt  │ │Push│ │Age-│
- │Min-│ │Age-│ │Age-│ │Age-│ │Age-│ │Age-│ │Age-│ │    │ │Age-│ │nt  │
- │ing │ │nt  │ │nt  │ │nt  │ │nt  │ │nt  │ │nt  │ │    │ │nt  │ │    │
- └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘
-   │      │      │      │      │      │      │      │      │      │
-   └──────┴──────┴──────┴──────┴──────┴──────┴──────┴──────┴──────┘
-                                    │
-                          ┌─────────▼──────────┐
-                          │   MessageBus       │
-                          │  (消息队列中间件)    │
-                          └─────────┬──────────┘
-                                    │
-                          ┌─────────▼──────────┐
-                          │  StorageAgent      │
-                          │  (SQLite 持久化)    │
-                          └─────────┬──────────┘
-                                    │
-                          ┌─────────▼──────────┐
-                          │   trading.db       │
-                          │  6 表 · 索引       │
-                          └────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│                           OrchestratorAgent                                       │
+│  每日触发: 板块→数据→信号→LLM辩论→RL→回测→风控→报告→可视化→飞书→存储→反思       │
+└────┬────┬────┬────┬────┬────┬────┬────┬────┬────┬────┬────┬────┬────┬────┬────┬────┘
+     │    │    │    │    │    │    │    │    │    │    │    │    │    │    │    │
+     ▼    ▼    ▼    ▼    ▼    ▼    ▼    ▼    ▼    ▼    ▼    ▼    ▼    ▼    ▼    ▼
+ ┌───┐ ┌───┐ ┌───┐ ┌────────┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐
+ │Hot │ │Data│ │TS │ │LLM     │ │RL │ │Str-│ │Risk│ │Rep-│ │Viz │ │Fei-│ │Sto-│
+ │Sect│ │Fetc│ │Sig-│ │Debate  │ │Tra-│ │ate-│ │Mgmt│ │ort │ │Age-│ │shu │ │rage│
+ │or  │ │h   │ │nal │ │Pipeline│ │ding│ │gy  │ │    │ │Gen │ │nt  │ │Push│ │Age-│
+ │Min-│ │Age-│ │Age-│ │(TA)    │ │Age-│ │Age-│ │Age-│ │Age-│ │    │ │Age-│ │nt  │
+ │ing │ │nt  │ │nt  │ │        │ │nt  │ │nt  │ │nt  │ │nt  │ │    │ │nt  │ │    │
+ └───┘ └───┘ └───┘ └────────┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘
+   │      │      │         │         │      │      │      │      │      │
+   └──────┴──────┴─────────┴─────────┴──────┴──────┴──────┴──────┴──────┘
+                                                                    │
+                                                          ┌─────────▼──────────┐
+                                                          │   MessageBus       │
+                                                          │  (消息队列中间件)    │
+                                                          └─────────┬──────────┘
+                                                                    │
+                                                          ┌─────────▼──────────┐
+                                                          │  StorageAgent      │
+                                                          │  (SQLite 持久化)    │
+                                                          └─────────┬──────────┘
+                                                                    │
+                                                          ┌─────────▼──────────┐
+                                                          │   trading.db       │
+                                                          │  8 表 · 索引       │
+                                                          └────────────────────┘
+                                                                    │
+                                                          ┌─────────▼──────────┐
+                                                          │  ReflectionAgent   │
+                                                          │  (记忆向量 + 反思)  │
+                                                          └────────────────────┘
 ```
 
 ### 数据流
@@ -46,24 +58,31 @@
 ```
 新闻/政策 ──→ 热点板块 ──→ 成分股 ──→ 日线数据 ──→ 技术指标
                                                     │
-              ┌────────────────────────────────────┘
+              ┌──────────────────────────────────────┘
               ▼
      时间序列信号 (CUSUM / 峰值谷值 / Bollinger)
               │
-              ▼
-       RL 交易决策 (启发式评分)
+              ├──→ [TradingAgents LLM 辩论管线] ──┐
+              │     Bull ↔ Bear 辩论               │ 并行信号
+              │     → ResearchManager 合成计划       │
+              │     → Aggr/Cons/Neut 风险辩论       │
+              │     → PortfolioManager 最终决策     │
+              │                                    │
+              ├──→ [原始启发式 RL 评分] ────────────┘
+              │     RSI + 价格位置 + 成交量评分
               │
               ▼
      多策略回测 ──→ 市场状态分类 ──→ 风控检查 ──→ 报告/可视化 ──→ 飞书推送
                                                                    │
                                                            ┌───────▼───────┐
-                                                           │  MessageBus   │
-                                                           │  → 各 topic   │
-                                                           └───────┬───────┘
-                                                                   ▼
-                                                           ┌───────────────┐
                                                            │  StorageAgent │
                                                            │  → SQLite 入库│
+                                                           └───────┬───────┘
+                                                                   │
+                                                           ┌───────▼───────┐
+                                                           │ Reflection   │
+                                                           │ → 记忆向量    │
+                                                           │ → 事后反思    │
                                                            └───────────────┘
 ```
 
@@ -71,35 +90,45 @@
 
 ## 多智能体结构
 
-系统由 10 个 Specialist Agent 组成，通过 OrchestratorAgent 编排，Agent 间通过 **MessageBus** 消息队列通信：
+系统由 **15 个 Specialist Agent** 组成，融合原始启发式信号与 TradingAgents 风格的 LLM 辩论决策：
 
 | Agent | 职责 | 核心算法 |
 |-------|------|---------|
 | **HotSectorMiningAgent** | 从央视新闻联播、概念板块热度挖掘热门板块 | jieba 分词 + TF-IDF 关键词→板块映射 |
 | **DataFetchAgent** | 获取 A 股日线数据，计算技术指标 | AKShare + BaoStock 双源备份, 多窗口指标计算 |
 | **TimeSeriesSignalAgent** | 检测趋势变化、突破、反转时间窗口 | CUSUM 过滤, argrelextrema 峰值检测, Bollinger 突破 |
+| **DebatePipelineCoordinator** 🆕 | TradingAgents 辩论管线协调器 | 内置 Bull/Bear/Research/Risk/PM 多轮辩论 |
 | **RLTradingAgent** | 在第一层信号基础上做出买卖决策 | 启发式多因子评分 (RSI+价格位置+成交量+TS信号) |
 | **MultiStrategyAgent** | 多策略回测 + 市场状态匹配 | 4 种策略并行回测, KMeans 聚类 |
 | **RiskManagementAgent** | 回撤预警 + 仓位管理 | Kelly Criterion, VaR(95%), 动态止损 |
+| **MarketJudgementAgent** | 市场整体研判 | 四维加权评分 (指数/成交量/板块/个股宽度) |
 | **ReportGeneratorAgent** | 汇总各 Agent 结果生成综合报告 | 模板引擎 |
 | **VisualizationAgent** | PyECharts 生成 HTML 可视化报告 | 5 种图表类型 |
 | **FeishuPushAgent** | 推送分析报告到飞书 | 飞书 webhook 卡片消息 |
-| **StorageAgent** | 持久化各 Agent 结果到 SQLite | 消息订阅 + 自动打标 |
+| **TradeJournalAgent** | 每日操作记录 | 交易流水持久化 |
+| **PositionAnalysisAgent** | 持仓明细分析 | 市值/盈亏/权重计算 |
+| **StorageAgent** | 持久化各 Agent 结果到 SQLite | 消息订阅 + 自动打标 + 辩论决策入库 |
+| **ReflectionAgent** 🆕 | 事后反思 + 记忆向量存储 | LLM 反思 + 同/跨股票上下文注入 |
 
 ### 编排方式
 
 ```python
 pipeline = [
-    HotSectorMiningAgent(),  # 1. 挖掘热门板块
-    DataFetchAgent(),         # 2. 获取数据+计算指标
-    TimeSeriesSignalAgent(),  # 3. 时间序列第一层信号
-    RLTradingAgent(),         # 4. RL 第二层决策
-    MultiStrategyAgent(),     # 5. 多策略回测
-    RiskManagementAgent(),    # 6. 风控检查
-    ReportGeneratorAgent(),   # 7. 生成报告
-    VisualizationAgent(),     # 8. 可视化
-    FeishuPushAgent(),        # 9. 飞书推送
-    StorageAgent(),           # 10. SQLite 持久化 ← 新增
+    HotSectorMiningAgent(),        # 1. 挖掘热门板块
+    DataFetchAgent(),              # 2. 获取数据+计算指标
+    TimeSeriesSignalAgent(),       # 3. 时间序列第一层信号
+    DebatePipelineCoordinator(),   # 4. 🆕 LLM 辩论管线 (Bull/Bear → RM → Risk → PM)
+    RLTradingAgent(),              # 5. 原始 RL 启发式评分 (与 LLM 信号并行)
+    MultiStrategyAgent(),          # 6. 多策略回测
+    RiskManagementAgent(),         # 7. 风控检查
+    MarketJudgementAgent(),        # 8. 市场研判
+    ReportGeneratorAgent(),        # 9. 生成报告
+    VisualizationAgent(),          # 10. 可视化
+    FeishuPushAgent(),             # 11. 飞书推送
+    TradeJournalAgent(),           # 12. 交易流水
+    PositionAnalysisAgent(),       # 13. 持仓分析
+    StorageAgent(),                # 14. SQLite 持久化
+    ReflectionAgent(),             # 15. 🆕 反思 + 记忆向量
 ]
 ```
 
@@ -111,16 +140,18 @@ pipeline = [
 
 所有 Agent 的计算结果最终由 **StorageAgent** 持久化到 SQLite 数据库，支持历史回溯和分析。
 
-### 数据库表结构
+### 数据库表结构 (8 表)
 
 | 表名 | 用途 | 关键字段 |
 |------|------|---------|
 | `agent_logs` | Agent 执行日志 | agent_name, date, status, execution_time_ms, error |
 | `hot_sectors` | 热门板块快照 | date, sector, heat_score, source, stocks_json |
-| `trading_signals` | 交易信号（含 TS 窗口关联） | date, stock, action, confidence, reason |
+| `trading_signals` | 交易信号（含 TS 窗口关联） | date, stock, action, confidence, reason, signal_type (rl/llm_debate) |
 | `backtest_results` | 回测结果 | date, strategy_name, total_return, sharpe_ratio, max_drawdown |
 | `model_labels` | **模型有效标签**（核心） | date, model_name, label_type, label_value, confidence, is_effective |
 | `market_cache` | 市场数据缓存 | stock_code, date, data_type, data_json, expires_at |
+| `debate_decisions` 🆕 | LLM 辩论决策记录 | date, stock, research_plan_json, risk_assessments_json, portfolio_decision_json, bull/bear_arguments_json |
+| `memory_vectors` 🆕 | 记忆向量存储 | date, stock, action, confidence, return_pct, reflection, rationale, embedding_json |
 
 ### 模型标签沉淀
 
@@ -150,7 +181,88 @@ Agent B ──publish("signals")──→ MessageBus ──consume──→ Agen
 
 ---
 
-## 核心算法
+## 🤖 TradingAgents 集成
+
+系统集成了 **TradingAgents** 风格的多智能体 LLM 辩论机制，与原始启发式 RL 信号并行运行。
+
+### LLM 辩论管线
+
+```
+时间序列信号
+     │
+     ▼
+┌─────────────────────────────────────────────────────────┐
+│   DebatePipelineCoordinator                              │
+│                                                         │
+│   1. BullResearcher  ←→  BearResearcher (交替辩论)      │
+│      ├── Bull: 基于信号 + 数据构建多头论据               │
+│      └── Bear: 基于信号 + 数据构建空头论据               │
+│                                                         │
+│   2. ResearchManager (deep_thinking_llm)                 │
+│      └── 综合辩论 → ResearchPlan (Buy/Overweight/Hold)  │
+│                                                         │
+│   3. AggressiveRisk ── ConservativeRisk ── NeutralRisk   │
+│      └── 三视角风险辩论 (仓位/止损/评分)                 │
+│                                                         │
+│   4. PortfolioManager (deep_thinking_llm)                │
+│      └── PortfolioDecision → 最终交易信号               │
+└─────────────────────────────────────────────────────────┘
+     │
+     ▼
+合并到 rl_signals (原始 RL 信号 + LLM 辩论信号并存)
+```
+
+### 两层 LLM 策略
+
+| 层级 | 角色 | 默认模型 | Provider |
+|------|------|---------|----------|
+| **quick_thinking_llm** | 分析师、研究员、交易员、风险辩论员 | qwen2.5:1.5b | Ollama (本地) |
+| **deep_thinking_llm** | Research Manager, Portfolio Manager | qwen2.5:1.5b | Ollama (本地) |
+
+支持通过环境变量切换为 OpenAI-compatible API:
+```bash
+export QUICK_LLM_PROVIDER=openai
+export QUICK_LLM_MODEL=gpt-4o-mini
+export QUICK_LLM_API_KEY=sk-xxx
+export DEEP_LLM_PROVIDER=openai
+export DEEP_LLM_MODEL=gpt-4o
+export DEEP_LLM_API_KEY=sk-xxx
+```
+
+### 结构化决策输出
+
+使用 Pydantic 模型强制 LLM 输出一致格式：
+
+| Schema | 产出者 | 主要字段 |
+|--------|--------|---------|
+| `ResearchPlan` | Research Manager | recommendation, rationale, strategic_actions, confidence |
+| `TraderProposal` | Trader | action, reasoning, entry_price, stop_loss, position_sizing |
+| `PortfolioDecision` | Portfolio Manager | rating, executive_summary, investment_thesis, position_pct |
+| `RiskAssessment` | Risk Debaters | perspective, max_position_pct, stop_loss_pct, verdict |
+
+### 记忆与反思系统
+
+```
+TradingMemoryLog (交易记忆日志)
+  ├── store_decision()   → 记录新决策 (pending 状态)
+  ├── update_with_outcome() → 事后更新 (return + reflection)
+  ├── get_past_context() → 同股票 + 跨股票上下文注入
+  └── 持久化: trading_memory.md + memory_vectors 表
+
+ReflectionAgent
+  ├── 事后反思 → LLM 生成 2-4 句经验总结
+  └── 存储到 trading_memory.md + SQLite memory_vectors
+```
+
+### A 股适配
+
+所有 LLM 提示词针对 A 股市场定制：
+- **涨跌停板**: 10% 主板 / 20% 科创/创业板
+- **T+1 结算**: 无法日内平仓，影响止损策略
+- **北向资金**: 作为市场情绪参考因子
+- **沪深流动性**: 根据市值和换手率调整仓位建议
+
+---
 
 ### 1. 热门板块挖掘
 
@@ -210,27 +322,42 @@ Agent B ──publish("signals")──→ MessageBus ──consume──→ Agen
 ```
 rl_trading_system/
 ├── main.py                           # 主入口（终端 / 问答模式）
-├── config.py                         # 全局配置
+├── app.py                            # Gradio Web UI
+├── config.py                         # 全局配置（含 LLM 两层配置）
 ├── requirements.txt
 ├── README.md
 ├── src/
 │   ├── agents/
-│   │   ├── __init__.py               # Agent 注册 + 管线定义
+│   │   ├── __init__.py               # Agent 注册 + 管线定义（含 debate 管线）
 │   │   ├── base.py                   # AgentContext + BaseAgent + OrchestratorAgent
+│   │   ├── schemas.py 🆕             # Pydantic 结构化输出 (ResearchPlan/TraderProposal/PortfolioDecision)
+│   │   ├── debate_state.py 🆕        # 辩论状态管理 (InvestDebateState / RiskDebateState)
+│   │   ├── debate_agent.py 🆕        # Bull/Bear 研究员辩论
+│   │   ├── research_manager_agent.py 🆕 # 研究经理 - 综合辩论 → ResearchPlan
+│   │   ├── risk_debate_agent.py 🆕   # 三视角风险辩论 (Aggressive/Conservative/Neutral)
+│   │   ├── portfolio_manager_agent.py 🆕 # 投资组合经理 - 最终决策
+│   │   ├── debate_coordinator.py 🆕  # 辩论管线协调器
+│   │   ├── memory_agent.py 🆕        # 交易记忆 + 反思 (TradingMemoryLog / ReflectionAgent)
 │   │   ├── hot_sector_agent.py       # 热门板块挖掘
 │   │   ├── data_agent.py             # 数据获取
 │   │   ├── ts_signal_agent.py        # 时间序列信号
 │   │   ├── rl_agent.py               # RL 交易决策
 │   │   ├── strategy_agent.py         # 多策略回测
 │   │   ├── risk_agent.py             # 风险管理
+│   │   ├── market_agent.py           # 市场研判
 │   │   ├── qa_agent.py               # 本地 LLM 问答 (Qwen2.5-1.5B)
 │   │   ├── viz_agent.py              # 可视化
 │   │   ├── feishu_agent.py           # 飞书推送
 │   │   ├── report_agent.py           # 报告生成
-│   │   └── storage_agent.py          # SQLite 持久化 ← 新增
-│   ├── storage/                      # ← 新增存储层
+│   │   ├── trade_journal_agent.py    # 交易流水
+│   │   ├── position_agent.py         # 持仓分析
+│   │   └── storage_agent.py          # SQLite 持久化（含辩论 + 记忆入库）
+│   ├── llm/ 🆕                       # LLM 客户端
 │   │   ├── __init__.py
-│   │   ├── database.py               # DatabaseManager (SQLite 6 表)
+│   │   └── client.py                 # 两层 LLM (quick/deep) + Ollama/OpenAI 支持
+│   ├── storage/
+│   │   ├── __init__.py
+│   │   ├── database.py               # DatabaseManager (SQLite 8 表)
 │   │   └── message_bus.py            # MessageBus (Queue 消息队列)
 │   ├── data/
 │   │   ├── fetcher.py                # AKShare 数据获取
@@ -248,7 +375,8 @@ rl_trading_system/
 └── output/
     ├── reports/                      # 可视化报告 HTML
     ├── models/                       # RL 模型
-    └── logs/                         # 日志
+    ├── logs/                         # 日志
+    └── trading_memory.md 🆕          # 交易记忆日志（人类可读）
 ```
 
 ---
@@ -425,8 +553,15 @@ RL 决策 (第二层)    ──→  判断"是否"执行交易
 - [x] 风险管理 (Kelly + VaR + 回撤预警)
 - [x] PyECharts 可视化报告
 - [x] 飞书推送
-- [ ] Gymnasium 交易环境 + PPO 在线训练
-- [ ] Ollama Qwen2.5-1.5B 本地问答
-- [ ] Gradio UI 面板
 - [x] 实盘数据验证 (AKShare + BaoStock 双源备份)
+- [x] Gradio UI 面板
+- [x] 多智能体 LLM 辩论管线 (TradingAgents 集成) 🆕
+- [x] Bull/Bear 研究员交替辩论机制 🆕
+- [x] 三视角风险辩论 (Aggressive/Conservative/Neutral) 🆕
+- [x] 两层 LLM 策略 (quick/deep thinking) 🆕
+- [x] Pydantic 结构化决策输出 🆕
+- [x] 交易记忆日志 + 事后反思 🆕
+- [x] 记忆向量 SQLite 持久化 🆕
+- [ ] Gymnasium 交易环境 + PPO 在线训练
 - [ ] 多时间周期信号融合
+- [ ] 辩论结果的回测对比评估

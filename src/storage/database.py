@@ -163,6 +163,43 @@ class DatabaseManager:
         cur.execute("CREATE INDEX IF NOT EXISTS idx_market_cache_lookup ON market_cache(stock_code, date, data_type)")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_trade_journal_date ON trade_journal(date)")
 
+        # 8. LLM 辩论决策记录 (TradingAgents)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS debate_decisions (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                date            TEXT NOT NULL,
+                stock           TEXT NOT NULL,
+                research_plan_json TEXT,
+                risk_assessments_json TEXT,
+                portfolio_decision_json TEXT,
+                bull_arguments_json TEXT,
+                bear_arguments_json TEXT,
+                created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        # 9. 记忆向量存储（交易决策记忆 + 文本）
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS memory_vectors (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                date            TEXT NOT NULL,
+                stock           TEXT NOT NULL,
+                action          TEXT NOT NULL,
+                confidence      REAL,
+                return_pct      REAL,
+                holding_days    INTEGER,
+                reflection      TEXT,
+                rationale       TEXT,
+                embedding_json  TEXT,
+                created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        # 索引
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_debate_decisions_date ON debate_decisions(date)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_memory_vectors_date ON memory_vectors(date)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_memory_vectors_stock ON memory_vectors(stock)")
+
         self.conn.commit()
 
     # ── Agent 日志 ────────────────────────────────────────
@@ -340,13 +377,69 @@ class DatabaseManager:
             ).fetchall()
         return [dict(r) for r in rows]
 
+    # ── LLM 辩论决策 (TradingAgents) ─────────────────────────
+
+    def save_debate_decision(self, date: str, stock: str, research_plan: dict = None,
+                             risk_assessments: dict = None, portfolio_decision: dict = None,
+                             bull_arguments: list = None, bear_arguments: list = None):
+        self.conn.execute(
+            "INSERT INTO debate_decisions(date,stock,research_plan_json,risk_assessments_json,"
+            "portfolio_decision_json,bull_arguments_json,bear_arguments_json) VALUES(?,?,?,?,?,?,?)",
+            (date, stock,
+             json.dumps(research_plan or {}, ensure_ascii=False),
+             json.dumps(risk_assessments or {}, ensure_ascii=False),
+             json.dumps(portfolio_decision or {}, ensure_ascii=False),
+             json.dumps(bull_arguments or [], ensure_ascii=False),
+             json.dumps(bear_arguments or [], ensure_ascii=False)),
+        )
+        self.conn.commit()
+
+    def get_debate_decisions(self, date: str = None, stock: str = None) -> list[dict]:
+        sql = "SELECT * FROM debate_decisions WHERE 1=1"
+        params = []
+        if date:
+            sql += " AND date=?"
+            params.append(date)
+        if stock:
+            sql += " AND stock=?"
+            params.append(stock)
+        sql += " ORDER BY created_at DESC"
+        return [dict(r) for r in self.conn.execute(sql, params).fetchall()]
+
+    # ── 记忆向量 ────────────────────────────────────────────
+
+    def save_memory_vector(self, date: str, stock: str, action: str, confidence: float = 0,
+                           return_pct: float = None, holding_days: int = None,
+                           reflection: str = "", rationale: str = "",
+                           embedding: list = None):
+        self.conn.execute(
+            "INSERT INTO memory_vectors(date,stock,action,confidence,return_pct,"
+            "holding_days,reflection,rationale,embedding_json) VALUES(?,?,?,?,?,?,?,?,?)",
+            (date, stock, action, confidence, return_pct, holding_days,
+             reflection[:500] if reflection else "",
+             rationale[:500] if rationale else "",
+             json.dumps(embedding or [])),
+        )
+        self.conn.commit()
+
+    def get_memory_vectors(self, stock: str = None, limit: int = 50) -> list[dict]:
+        sql = "SELECT * FROM memory_vectors WHERE 1=1"
+        params = []
+        if stock:
+            sql += " AND stock=?"
+            params.append(stock)
+        sql += " ORDER BY created_at DESC LIMIT ?"
+        params.append(limit)
+        return [dict(r) for r in self.conn.execute(sql, params).fetchall()]
+
     # ── 统计 ──────────────────────────────────────────────
 
     def table_stats(self) -> dict[str, int]:
         """各表记录数"""
         stats = {}
         for table in ("agent_logs", "hot_sectors", "trading_signals",
-                      "backtest_results", "model_labels", "market_cache"):
+                      "backtest_results", "model_labels", "market_cache",
+                      "debate_decisions", "memory_vectors"):
             row = self.conn.execute(f"SELECT COUNT(*) as cnt FROM {table}").fetchone()
             stats[table] = row["cnt"]
         return stats

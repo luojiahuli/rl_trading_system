@@ -75,6 +75,41 @@ class StorageAgent(BaseAgent):
                                          f"{len(context.backtest_results)} 回测",
                           execution_time_ms=elapsed)
 
+        # 7. 持久化 LLM 辩论决策 (TradingAgents)
+        if context.research_plan or context.portfolio_decision:
+            debate = context.invest_debate
+            db.save_debate_decision(
+                date=date,
+                stock=context.current_debate_stock or "all",
+                research_plan=context.research_plan.model_dump() if context.research_plan else None,
+                risk_assessments={k: v.model_dump() for k, v in context.risk_assessments.items()},
+                portfolio_decision=context.portfolio_decision.model_dump() if context.portfolio_decision else None,
+                bull_arguments=debate.bull_history if debate else [],
+                bear_arguments=debate.bear_history if debate else [],
+            )
+            # 内存记忆标注
+            if context.portfolio_decision:
+                db.save_model_label(
+                    date=date,
+                    model_name="llm_debate_portfolio",
+                    label_type="portfolio_decision",
+                    label_value=context.portfolio_decision.rating.value,
+                    confidence=context.portfolio_decision.position_pct,
+                    features={"position_pct": context.portfolio_decision.position_pct},
+                    is_effective=context.portfolio_decision.rating.value in ("Buy", "Overweight"),
+                )
+
+        # 8. 持久化记忆向量
+        if context.rl_signals:
+            for sig in context.rl_signals:
+                db.save_memory_vector(
+                    date=date,
+                    stock=sig.get("stock", ""),
+                    action=sig.get("action", ""),
+                    confidence=sig.get("confidence", 0),
+                    rationale=sig.get("reason", ""),
+                )
+
         # 打印统计
         stats = db.table_stats()
         context.warnings.append(
@@ -82,7 +117,9 @@ class StorageAgent(BaseAgent):
             f"hot_sectors={stats.get('hot_sectors',0)} "
             f"signals={stats.get('trading_signals',0)} "
             f"backtest={stats.get('backtest_results',0)} "
-            f"labels={stats.get('model_labels',0)}"
+            f"labels={stats.get('model_labels',0)} "
+            f"debate={stats.get('debate_decisions',0)} "
+            f"memory={stats.get('memory_vectors',0)}"
         )
 
         return context

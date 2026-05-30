@@ -46,11 +46,33 @@ RL_STOP_LOSS_WARN = -0.05       # 软预警 -5%
 RISK_MAX_DRAWDOWN = -0.15       # 最大回撤阈值
 RISK_KELLY_FRACTION = 0.25      # Kelly 系数（保守）
 
-# ====== 本地模型 ======
-LLM_MODEL_PATH = os.getenv(
-    "LLM_MODEL_PATH",
-    "",  # 设为 "" 时使用 Ollama，填入路径则用 llama-cpp-python
-)
+# ====== LLM 配置 (TradingAgents 集成) ======
+# --- 两层 LLM 策略 ---
+# quick_thinking_llm: 快速/便宜的模型，用于分析师、研究员、交易员、风险辩论
+# deep_thinking_llm:  更强大的模型，用于管理者决策（Research Manager, Portfolio Manager）
+#
+# 支持两种 provider: "ollama" (本地) 或 "openai" (OpenAI-compatible API)
+
+# Quick thinking LLM (analysts, researchers, trader, risk debaters)
+QUICK_LLM_PROVIDER = os.getenv("QUICK_LLM_PROVIDER", "ollama")
+QUICK_LLM_MODEL = os.getenv("QUICK_LLM_MODEL", "qwen2.5:1.5b")
+QUICK_LLM_API_KEY = os.getenv("QUICK_LLM_API_KEY", "")
+QUICK_LLM_BASE_URL = os.getenv("QUICK_LLM_BASE_URL", "http://localhost:11434")
+
+# Deep thinking LLM (managers)
+DEEP_LLM_PROVIDER = os.getenv("DEEP_LLM_PROVIDER", "ollama")
+DEEP_LLM_MODEL = os.getenv("DEEP_LLM_MODEL", "qwen2.5:1.5b")
+DEEP_LLM_API_KEY = os.getenv("DEEP_LLM_API_KEY", "")
+DEEP_LLM_BASE_URL = os.getenv("DEEP_LLM_BASE_URL", "http://localhost:11434")
+
+# LLM 辩论配置
+LLM_DEBATE_ENABLED = os.getenv("LLM_DEBATE_ENABLED", "true").lower() == "true"
+LLM_DEBATE_MAX_ROUNDS = int(os.getenv("LLM_DEBATE_MAX_ROUNDS", "2"))  # Bull/Bear 辩论轮数
+LLM_RISK_MAX_ROUNDS = int(os.getenv("LLM_RISK_MAX_ROUNDS", "1"))      # 风险辩论轮数
+LLM_MIN_SIGNAL_CONFIDENCE = float(os.getenv("LLM_MIN_SIGNAL_CONFIDENCE", "0.3"))
+
+# Ollama (本地 LLM, 仅 ollama provider 时使用)
+LLM_MODEL_PATH = os.getenv("LLM_MODEL_PATH", "")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:1.5b")
 
 # ====== 输出目录 ======

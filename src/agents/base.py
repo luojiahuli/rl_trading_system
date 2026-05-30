@@ -58,6 +58,17 @@ class AgentContext:
     errors: list = field(default_factory=list)
     warnings: list = field(default_factory=list)
 
+    # === TradingAgents 集成: LLM 辩论相关 ===
+    current_debate_stock: str = ""         # 当前正在辩论的股票代码
+    invest_debate: Any = None              # InvestDebateState 实例
+    research_plan: Any = None              # ResearchPlan 实例
+    risk_debate: Any = None                # RiskDebateState 实例
+    risk_assessments: dict = field(default_factory=dict)  # {perspective: RiskAssessment}
+    portfolio_decision: Any = None         # PortfolioDecision 实例
+    llm_client: Any = None                 # LLMClient 实例
+    memory_log: Any = None                 # TradingMemoryLog 实例
+    past_context: str = ""                 # 从 memory log 注入的历史上下文
+
     # === 基础设施（由 Orchestrator 注入） ===
     bus: Any = None                    # MessageBus 实例
     db: Any = None                     # DatabaseManager 实例
