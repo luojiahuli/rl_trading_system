@@ -4,46 +4,178 @@
     "end": "2026-05-30"
   },
   "initial_capital_per_stock": 1000000,
-  "strategies": {
+  "basic_strategies": {
     "trend_following": {
-      "total_return": -0.0055,
-      "avg_return": -0.0055,
-      "sharpe_ratio": -1.5142,
-      "max_drawdown": -0.0076,
+      "total_return": -0.0056,
+      "avg_return": -0.0056,
+      "sharpe_ratio": -1.514,
+      "max_drawdown": -0.0077,
       "num_trades": 16,
-      "win_rate": 0.0727,
-      "n_stocks": 55,
-      "final_value": 54699711.75
+      "stop_losses": 0,
+      "take_profits": 0,
+      "win_rate": 0.0741,
+      "n_stocks": 54,
+      "final_value": 53699711.75
     },
     "mean_reversion": {
-      "total_return": -0.0379,
-      "avg_return": -0.0379,
-      "sharpe_ratio": -7.6596,
-      "max_drawdown": -0.0413,
-      "num_trades": 122,
-      "win_rate": 0.0727,
-      "n_stocks": 55,
-      "final_value": 52913263.68
+      "total_return": -0.038,
+      "avg_return": -0.038,
+      "sharpe_ratio": -7.7313,
+      "max_drawdown": -0.0416,
+      "num_trades": 119,
+      "stop_losses": 0,
+      "take_profits": 0,
+      "win_rate": 0.0741,
+      "n_stocks": 54,
+      "final_value": 51946984.22
     },
     "breakout": {
-      "total_return": -0.0152,
-      "avg_return": -0.0152,
-      "sharpe_ratio": -3.5533,
-      "max_drawdown": -0.016,
+      "total_return": -0.0154,
+      "avg_return": -0.0154,
+      "sharpe_ratio": -3.5532,
+      "max_drawdown": -0.0163,
       "num_trades": 16,
-      "win_rate": 0.0545,
-      "n_stocks": 55,
-      "final_value": 54166039.46
+      "stop_losses": 0,
+      "take_profits": 0,
+      "win_rate": 0.0556,
+      "n_stocks": 54,
+      "final_value": 53166039.46
     },
     "momentum": {
-      "total_return": 0.0273,
-      "avg_return": 0.0273,
-      "sharpe_ratio": 1.4244,
-      "max_drawdown": -0.0322,
+      "total_return": 0.0278,
+      "avg_return": 0.0278,
+      "sharpe_ratio": 1.4263,
+      "max_drawdown": -0.0327,
       "num_trades": 121,
-      "win_rate": 0.3091,
-      "n_stocks": 55,
-      "final_value": 56501133.55
+      "stop_losses": 0,
+      "take_profits": 0,
+      "win_rate": 0.3148,
+      "n_stocks": 54,
+      "final_value": 55501133.55
+    }
+  },
+  "enhanced_strategies": {
+    "enhanced_trend": {
+      "total_return": 0.006,
+      "avg_return": 0.006,
+      "sharpe_ratio": 0.8331,
+      "max_drawdown": -0.0147,
+      "num_trades": 56,
+      "stop_losses": 0,
+      "take_profits": 0,
+      "win_rate": 0.1296,
+      "n_stocks": 54,
+      "final_value": 54322493.0
+    },
+    "enhanced_mean_reversion": {
+      "total_return": -0.0037,
+      "avg_return": -0.0037,
+      "sharpe_ratio": -3.1785,
+      "max_drawdown": -0.0045,
+      "num_trades": 7,
+      "stop_losses": 0,
+      "take_profits": 0,
+      "win_rate": 0.037,
+      "n_stocks": 54,
+      "final_value": 53801659.08
+    },
+    "enhanced_breakout": {
+      "total_return": -0.0006,
+      "avg_return": -0.0006,
+      "sharpe_ratio": -0.2027,
+      "max_drawdown": -0.0052,
+      "num_trades": 9,
+      "stop_losses": 0,
+      "take_profits": 0,
+      "win_rate": 0.0556,
+      "n_stocks": 54,
+      "final_value": 53968403.51
+    },
+    "enhanced_momentum": {
+      "total_return": 0.0039,
+      "avg_return": 0.0039,
+      "sharpe_ratio": 0.4352,
+      "max_drawdown": -0.0161,
+      "num_trades": 89,
+      "stop_losses": 0,
+      "take_profits": 0,
+      "win_rate": 0.1852,
+      "n_stocks": 54,
+      "final_value": 54208373.4
+    },
+    "composite": {
+      "total_return": 0.0055,
+      "avg_return": 0.0055,
+      "sharpe_ratio": 1.3499,
+      "max_drawdown": -0.0057,
+      "num_trades": 89,
+      "stop_losses": 0,
+      "take_profits": 0,
+      "win_rate": 0.2593,
+      "n_stocks": 54,
+      "final_value": 54294748.96
+    }
+  },
+  "enhanced_with_risk_mgmt": {
+    "enhanced_trend": {
+      "total_return": 0.0059,
+      "avg_return": 0.0059,
+      "sharpe_ratio": 1.104,
+      "max_drawdown": -0.0104,
+      "num_trades": 56,
+      "stop_losses": 14,
+      "take_profits": 6,
+      "win_rate": 0.1296,
+      "n_stocks": 54,
+      "final_value": 54320148.48
+    },
+    "enhanced_mean_reversion": {
+      "total_return": -0.003,
+      "avg_return": -0.003,
+      "sharpe_ratio": -2.6188,
+      "max_drawdown": -0.0039,
+      "num_trades": 7,
+      "stop_losses": 4,
+      "take_profits": 0,
+      "win_rate": 0.037,
+      "n_stocks": 54,
+      "final_value": 53840511.21
+    },
+    "enhanced_breakout": {
+      "total_return": -0.0005,
+      "avg_return": -0.0005,
+      "sharpe_ratio": -0.2746,
+      "max_drawdown": -0.0036,
+      "num_trades": 9,
+      "stop_losses": 5,
+      "take_profits": 2,
+      "win_rate": 0.037,
+      "n_stocks": 54,
+      "final_value": 53972566.23
+    },
+    "enhanced_momentum": {
+      "total_return": 0.006,
+      "avg_return": 0.006,
+      "sharpe_ratio": 0.908,
+      "max_drawdown": -0.011,
+      "num_trades": 89,
+      "stop_losses": 36,
+      "take_profits": 3,
+      "win_rate": 0.1481,
+      "n_stocks": 54,
+      "final_value": 54325927.18
+    },
+    "composite": {
+      "total_return": 0.0059,
+      "avg_return": 0.0059,
+      "sharpe_ratio": 1.5549,
+      "max_drawdown": -0.0054,
+      "num_trades": 89,
+      "stop_losses": 13,
+      "take_profits": 0,
+      "win_rate": 0.2593,
+      "n_stocks": 54,
+      "final_value": 54318492.73
     }
   }
 }
