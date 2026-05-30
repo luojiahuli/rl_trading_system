@@ -8,6 +8,15 @@ import json
 import urllib.request
 from typing import Optional
 
+# ── Provider 配置 ──────────────────────────────────────────
+# Provider → (默认 base_url, API key env var name)
+PROVIDER_CONFIG = {
+    "deepseek":  ("https://api.deepseek.com/v1",      "DEEPSEEK_API_KEY"),
+    "minimax":   ("https://api.minimax.chat/v1",      "MINIMAX_API_KEY"),
+    "openai":    ("https://api.openai.com/v1",         "OPENAI_API_KEY"),
+    "openai-compatible": ("https://api.openai.com/v1", "OPENAI_API_KEY"),
+}
+
 
 def _ollama_chat(model: str, messages: list, temperature: float = 0.7,
                  base_url: str = "http://localhost:11434") -> str:
@@ -90,16 +99,23 @@ class LLMClient:
 
     def _call(self, provider: str, model: str, messages: list,
               api_key: str = "", base_url: str = "", temperature: float = 0.7) -> str:
-        """Route to the correct provider."""
-        if provider in ("openai", "openai-compatible"):
-            if not api_key:
-                api_key = os.getenv("OPENAI_API_KEY", "")
-            if not api_key:
-                return "[LLM error: no API key for OpenAI provider]"
-            return _openai_chat(model, messages, api_key,
-                                base_url or "https://api.openai.com/v1", temperature)
-        # Default: ollama
-        return _ollama_chat(model, messages, temperature, base_url)
+        """Route to the correct provider.
+
+        Supports: ollama (local), deepseek, minimax, openai, openai-compatible.
+        deepseek and minimax are OpenAI-compatible — fall back to _openai_chat.
+        """
+        if provider == "ollama":
+            return _ollama_chat(model, messages, temperature, base_url)
+
+        # OpenAI-compatible providers: deepseek, minimax, openai, openai-compatible
+        default_url, env_key = PROVIDER_CONFIG.get(provider, ("", ""))
+        if not base_url:
+            base_url = default_url
+        if not api_key and env_key:
+            api_key = os.getenv(env_key, "")
+        if not api_key:
+            return f"[LLM error: no API key for {provider} provider]"
+        return _openai_chat(model, messages, api_key, base_url, temperature)
 
     def quick_chat(self, messages: list, temperature: float = 0.7) -> str:
         """Call the quick-thinking LLM (for analysts, researchers, trader, risk)."""
@@ -117,7 +133,12 @@ class LLMClient:
 
     @staticmethod
     def from_config() -> "LLMClient":
-        """Create client from rl_trading_system config."""
+        """Create client from rl_trading_system config.
+
+        Reads from config.py, which in turn reads from Hermes ~/.hermes/.env
+        for DeepSeek and MiniMax API keys by default.
+        No manual environment variable setup needed if Hermes is configured.
+        """
         try:
             import config as cfg
             return LLMClient({
@@ -130,5 +151,23 @@ class LLMClient:
                 "deep_api_key": cfg.DEEP_LLM_API_KEY,
                 "deep_base_url": cfg.DEEP_LLM_BASE_URL,
             })
-        except (ImportError, AttributeError):
-            return LLMClient()
+        except (ImportError, AttributeError) as e:
+            # Fallback: try reading from Hermes .env directly
+            hermes_keys = {}
+            try:
+                for line in open(os.path.expanduser("~/.hermes/.env")):
+                    if "=" in line:
+                        k, v = line.strip().split("=", 1)
+                        hermes_keys[k] = v
+            except Exception:
+                pass
+            return LLMClient({
+                "quick_provider": "deepseek",
+                "quick_model": "deepseek-chat",
+                "quick_api_key": hermes_keys.get("DEEPSEEK_API_KEY", ""),
+                "quick_base_url": "https://api.deepseek.com/v1",
+                "deep_provider": "minimax",
+                "deep_model": "MiniMax-M2.7",
+                "deep_api_key": hermes_keys.get("MINIMAX_API_KEY", ""),
+                "deep_base_url": "https://api.minimax.chat/v1",
+            })

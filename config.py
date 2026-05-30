@@ -48,22 +48,55 @@ RISK_KELLY_FRACTION = 0.25      # Kelly 系数（保守）
 
 # ====== LLM 配置 (TradingAgents 集成) ======
 # --- 两层 LLM 策略 ---
-# quick_thinking_llm: 快速/便宜的模型，用于分析师、研究员、交易员、风险辩论
-# deep_thinking_llm:  更强大的模型，用于管理者决策（Research Manager, Portfolio Manager）
+# quick_thinking_llm:  快速/便宜的模型 (DeepSeek)，用于分析师、研究员、交易员、风险辩论
+# deep_thinking_llm:   更强大的模型 (MiniMax)，用于管理者决策（Research Manager, Portfolio Manager）
 #
-# 支持两种 provider: "ollama" (本地) 或 "openai" (OpenAI-compatible API)
+# 支持三种 provider: "ollama" (本地), "deepseek", "minimax", 或 "openai" (通用 OpenAI-compatible)
+#
+# 默认从 Hermes (~/.hermes/.env) 读取 API Key
 
-# Quick thinking LLM (analysts, researchers, trader, risk debaters)
-QUICK_LLM_PROVIDER = os.getenv("QUICK_LLM_PROVIDER", "ollama")
-QUICK_LLM_MODEL = os.getenv("QUICK_LLM_MODEL", "qwen2.5:1.5b")
-QUICK_LLM_API_KEY = os.getenv("QUICK_LLM_API_KEY", "")
-QUICK_LLM_BASE_URL = os.getenv("QUICK_LLM_BASE_URL", "http://localhost:11434")
+def _load_hermes_env(key: str) -> str:
+    """从 Hermes .env 读取配置"""
+    import os
+    val = os.getenv(key, "")
+    if val:
+        return val
+    try:
+        for line in open(os.path.expanduser("~/.hermes/.env")):
+            if "=" in line:
+                k, v = line.strip().split("=", 1)
+                if k == key:
+                    return v
+    except (FileNotFoundError, IOError):
+        pass
+    # 尝试从 config.yaml 读取 minimax base_url
+    if key == "MINIMAX_BASE_URL":
+        try:
+            import yaml
+            cfg = yaml.safe_load(open(os.path.expanduser("~/.hermes/config.yaml")))
+            return cfg.get("model", {}).get("base_url", "https://api.minimax.chat/v1")
+        except Exception:
+            return "https://api.minimax.chat/v1"
+    if key == "MINIMAX_MODEL":
+        try:
+            import yaml
+            cfg = yaml.safe_load(open(os.path.expanduser("~/.hermes/config.yaml")))
+            return cfg.get("model", {}).get("default", "MiniMax-M2.7").split("/")[-1]
+        except Exception:
+            return "MiniMax-M2.7"
+    return ""
 
-# Deep thinking LLM (managers)
-DEEP_LLM_PROVIDER = os.getenv("DEEP_LLM_PROVIDER", "ollama")
-DEEP_LLM_MODEL = os.getenv("DEEP_LLM_MODEL", "qwen2.5:1.5b")
-DEEP_LLM_API_KEY = os.getenv("DEEP_LLM_API_KEY", "")
-DEEP_LLM_BASE_URL = os.getenv("DEEP_LLM_BASE_URL", "http://localhost:11434")
+# Quick thinking LLM → DeepSeek (便宜、快速)
+QUICK_LLM_PROVIDER = os.getenv("QUICK_LLM_PROVIDER", "deepseek")
+QUICK_LLM_MODEL = os.getenv("QUICK_LLM_MODEL", "deepseek-chat")
+QUICK_LLM_API_KEY = os.getenv("QUICK_LLM_API_KEY", _load_hermes_env("DEEPSEEK_API_KEY"))
+QUICK_LLM_BASE_URL = os.getenv("QUICK_LLM_BASE_URL", "https://api.deepseek.com/v1")
+
+# Deep thinking LLM → MiniMax M2.7 (更强大)
+DEEP_LLM_PROVIDER = os.getenv("DEEP_LLM_PROVIDER", "minimax")
+DEEP_LLM_MODEL = os.getenv("DEEP_LLM_MODEL", _load_hermes_env("MINIMAX_MODEL"))
+DEEP_LLM_API_KEY = os.getenv("DEEP_LLM_API_KEY", _load_hermes_env("MINIMAX_API_KEY"))
+DEEP_LLM_BASE_URL = os.getenv("DEEP_LLM_BASE_URL", _load_hermes_env("MINIMAX_BASE_URL"))
 
 # LLM 辩论配置
 LLM_DEBATE_ENABLED = os.getenv("LLM_DEBATE_ENABLED", "true").lower() == "true"
