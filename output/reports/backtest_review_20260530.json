@@ -1,0 +1,49 @@
+{
+  "backtest_period": {
+    "start": "2026-04-01",
+    "end": "2026-05-30"
+  },
+  "initial_capital_per_stock": 1000000,
+  "strategies": {
+    "trend_following": {
+      "total_return": -0.0055,
+      "avg_return": -0.0055,
+      "sharpe_ratio": -1.5142,
+      "max_drawdown": -0.0076,
+      "num_trades": 16,
+      "win_rate": 0.0727,
+      "n_stocks": 55,
+      "final_value": 54699711.75
+    },
+    "mean_reversion": {
+      "total_return": -0.0379,
+      "avg_return": -0.0379,
+      "sharpe_ratio": -7.6596,
+      "max_drawdown": -0.0413,
+      "num_trades": 122,
+      "win_rate": 0.0727,
+      "n_stocks": 55,
+      "final_value": 52913263.68
+    },
+    "breakout": {
+      "total_return": -0.0152,
+      "avg_return": -0.0152,
+      "sharpe_ratio": -3.5533,
+      "max_drawdown": -0.016,
+      "num_trades": 16,
+      "win_rate": 0.0545,
+      "n_stocks": 55,
+      "final_value": 54166039.46
+    },
+    "momentum": {
+      "total_return": 0.0273,
+      "avg_return": 0.0273,
+      "sharpe_ratio": 1.4244,
+      "max_drawdown": -0.0322,
+      "num_trades": 121,
+      "win_rate": 0.3091,
+      "n_stocks": 55,
+      "final_value": 56501133.55
+    }
+  }
+}
