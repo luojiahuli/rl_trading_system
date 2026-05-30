@@ -16,9 +16,9 @@ import requests, json, time, os, sys
 sys.path.insert(0, '.')
 from config import START_DATE, END_DATE
 
-APP_ID = 'cli_aa8a3a870d789cb1'
-APP_SECRET = 'LRlOiS6mYruAvHgnmTFBEbk6dMkmhiWj'
-CHAT_ID = 'oc_ed483f60e1bc9408534038ee155eaf5d'
+APP_ID = os.environ.get('FEISHU_APP_ID', '')
+APP_SECRET = os.environ.get('FEISHU_APP_SECRET', '')
+CHAT_ID = os.environ.get('FEISHU_CHAT_ID', '')
 
 # Get token
 r = requests.post(
