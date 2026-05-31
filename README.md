@@ -94,7 +94,7 @@
 
 | Agent | 职责 | 核心算法 |
 |-------|------|---------|
-| **HotSectorMiningAgent** | 从央视新闻联播、概念板块热度挖掘热门板块 | jieba 分词 + TF-IDF 关键词→板块映射 |
+| **HotSectorMiningAgent** 🆕 | 从多源并行抓取新闻挖掘热门板块 | ECC 架构：COLLECT → ENRICH → STORE, 并行抓取 + 关键词/LLM 双通道分类 |
 | **DataFetchAgent** | 获取 A 股日线数据，计算技术指标 | AKShare + BaoStock 双源备份, 多窗口指标计算 |
 | **TimeSeriesSignalAgent** | 检测趋势变化、突破、反转时间窗口 | CUSUM 过滤, argrelextrema 峰值检测, Bollinger 突破 |
 | **DebatePipelineCoordinator** 🆕 | TradingAgents 辩论管线协调器 | 内置 Bull/Bear/Research/Risk/PM 多轮辩论 |
@@ -801,3 +801,35 @@ RL 决策 (第二层)    ──→  判断"是否"执行交易
 - [ ] Gymnasium 交易环境 + PPO 在线训练
 - [ ] 多时间周期信号融合
 - [ ] 辩论结果的回测对比评估
+
+---
+
+## ECC 架构增强
+
+系统集成了 **ECC（Everything Claude Code）** 架构模式优化热点板块挖掘：
+
+### COLLECT → ENRICH → STORE
+
+```
+COLLECT: fetch_all_parallel(market="cn")
+         └── 新浪财经 + 财联社 + 东方财富  并行抓取，合并去重
+ENRICH:  classify_sectors(texts, ...)
+         └── 关键词 + 可选 Gemini LLM    双通道板块分类
+STORE:   context.hot_sectors
+         └── 热度评分 + 成分股映射        输出到交易管线
+```
+
+### 改进对比
+
+| 维度 | 重构前 | 重构后（ECC） |
+|------|--------|--------------|
+| 新闻源 | 顺序轮询，停在第1个成功源 | 所有源并行抓取，取最大覆盖 |
+| 板块分类 | jieba 分词 + 关键词 | 关键词 + 可选 Gemini LLM 双通道 |
+| 缓存 | 无 | SHA-256 内容哈希 + 30 分钟 TTL |
+| 配置 | 硬编码 | YAML + 环境变量覆盖 |
+| 自动化 | 手动运行 | GitHub Actions 定时（9:30/16:00） |
+| 共享代码 | 各项目独立维护 | `scrapling_utils` 统一引擎 |
+
+### 依赖
+
+- [scrapling_utils](https://github.com/luojiahuli/scrapling_utils) — 跨项目共享爬虫工具包
