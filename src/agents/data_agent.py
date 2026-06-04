@@ -59,19 +59,13 @@ class DataFetchAgent(BaseAgent):
 
             for code in stocks[:8]:
                 df = pd.DataFrame()
-                # 尝试 BaoStock 获取真实数据（8s 超时）
+                # 尝试 BaoStock 获取真实数据（4s 超时）
                 try:
                     import concurrent.futures
                     ex = concurrent.futures.ThreadPoolExecutor()
                     f = ex.submit(fetch_stock_daily, code, START_DATE, END_DATE)
-                    df = f.result(timeout=8)
+                    df = f.result(timeout=4)
                     ex.shutdown(wait=False)
-                except concurrent.futures.TimeoutError:
-                    df = pd.DataFrame()
-                    try:
-                        ex.shutdown(wait=False)
-                    except Exception:
-                        pass
                 except Exception:
                     df = pd.DataFrame()
                     try:

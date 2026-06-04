@@ -161,6 +161,35 @@ class ConservativeRiskAgent(BaseAgent):
     def __init__(self, llm_client: LLMClient = None):
         self.llm = llm_client or LLMClient.from_config()
 
+    def _summarize_signals(self, ctx, stock):
+        hits = [s for s in ctx.ts_signals if s.get("stock") == stock]
+        return "; ".join(f"{s['type']}(conf={s['confidence']})" for s in hits[:5]) or "None"
+
+    def _get_indicators(self, ctx, stock):
+        ind = ctx.indicators.get(stock, {})
+        return json.dumps({k: round(v, 3) if isinstance(v, float) else v for k, v in ind.items()},
+                         ensure_ascii=False) if ind else "None"
+
+    def _parse_response(self, response: str, perspective: str = "aggressive") -> RiskAssessment | None:
+        try:
+            if "{" in response:
+                json_str = response[response.index("{"):response.rindex("}")+1]
+                data = json.loads(json_str)
+                defaults = {"aggressive": (0.3, 0.08, 0.0),
+                            "conservative": (0.1, 0.05, 0.0),
+                            "neutral": (0.2, 0.06, 0.0)}
+                max_pos, stop, score = defaults.get(perspective, (0.2, 0.06, 0.0))
+                return RiskAssessment(
+                    perspective=perspective,
+                    max_position_pct=float(data.get("max_position_pct", max_pos)),
+                    stop_loss_pct=float(data.get("stop_loss_pct", stop)),
+                    verdict=data.get("verdict", ""),
+                    score=float(data.get("score", score)),
+                )
+        except Exception:
+            pass
+        return None
+
     def execute(self, context: AgentContext) -> AgentContext:
         debate = context.risk_debate
         if debate is None or debate.is_concluded:
@@ -176,6 +205,35 @@ class NeutralRiskAgent(BaseAgent):
 
     def __init__(self, llm_client: LLMClient = None):
         self.llm = llm_client or LLMClient.from_config()
+
+    def _summarize_signals(self, ctx, stock):
+        hits = [s for s in ctx.ts_signals if s.get("stock") == stock]
+        return "; ".join(f"{s['type']}(conf={s['confidence']})" for s in hits[:5]) or "None"
+
+    def _get_indicators(self, ctx, stock):
+        ind = ctx.indicators.get(stock, {})
+        return json.dumps({k: round(v, 3) if isinstance(v, float) else v for k, v in ind.items()},
+                         ensure_ascii=False) if ind else "None"
+
+    def _parse_response(self, response: str, perspective: str = "neutral") -> RiskAssessment | None:
+        try:
+            if "{" in response:
+                json_str = response[response.index("{"):response.rindex("}")+1]
+                data = json.loads(json_str)
+                defaults = {"aggressive": (0.3, 0.08, 0.0),
+                            "conservative": (0.1, 0.05, 0.0),
+                            "neutral": (0.2, 0.06, 0.0)}
+                max_pos, stop, score = defaults.get(perspective, (0.2, 0.06, 0.0))
+                return RiskAssessment(
+                    perspective=perspective,
+                    max_position_pct=float(data.get("max_position_pct", max_pos)),
+                    stop_loss_pct=float(data.get("stop_loss_pct", stop)),
+                    verdict=data.get("verdict", ""),
+                    score=float(data.get("score", score)),
+                )
+        except Exception:
+            pass
+        return None
 
     def execute(self, context: AgentContext) -> AgentContext:
         debate = context.risk_debate

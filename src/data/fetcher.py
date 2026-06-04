@@ -7,7 +7,7 @@ import os
 import baostock as bs
 
 # 全局网络超时
-socket.setdefaulttimeout(10)
+socket.setdefaulttimeout(5)
 
 # BaoStock 会话（复用登录，避免每只股票重复 login/logout）
 _BS_LOGGED_IN = False
@@ -16,8 +16,14 @@ _BS_LOGGED_IN = False
 def _ensure_bs_login():
     global _BS_LOGGED_IN
     if not _BS_LOGGED_IN:
-        bs.login()
-        _BS_LOGGED_IN = True
+        import concurrent.futures
+        try:
+            with concurrent.futures.ThreadPoolExecutor() as ex:
+                f = ex.submit(bs.login)
+                f.result(timeout=5)
+            _BS_LOGGED_IN = True
+        except Exception:
+            pass
 
 
 def _bs_logout():
