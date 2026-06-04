@@ -862,3 +862,303 @@ The directional call was incorrect, as the stock declined despite the anticipate
 
 <!-- ENTRY_END -->
 
+[2026-06-04 | 688111 | buy | 0.80 | +10.33% | 13d]
+
+Price: 31.67
+Rationale: RSI=21.54161527042585, 价格位置=0.10, 量比=1.03
+
+Return: +10.33%
+Holding Days: 13
+Reflection:
+The directional call was correct, as the stock rose over 10% in the target timeframe. The entry timing and momentum confirmation worked well, but the exit lacked a predefined trailing stop, leaving some upside unrealized. Next time, set a hard trailing stop at 5% from the peak to lock in gains during volatile moves.
+
+<!-- ENTRY_END -->
+
+[2026-06-04 | 300661 | sell | 0.80 | +13.22% | 18d]
+
+Price: 25.85
+Rationale: RSI=57.57200048437266, 价格位置=0.89, 量比=2.67
+
+Return: +13.22%
+Holding Days: 18
+Reflection:
+The directional call was correct, as the position captured a +13.22% gain in 18 days. The analysis succeeded in identifying a strong momentum breakout, but the exit was slightly premature, leaving potential upside on the table. Next time, I will trail a tighter stop-loss after a 10% gain to lock in profits while allowing room for further upside.
+
+<!-- ENTRY_END -->
+
+[2026-06-04 | 300750 | buy | 0.80 | -26.42% | 23d]
+
+Price: 24.77
+Rationale: RSI=22.59484204617314, 价格位置=0.10, 量比=0.27
+
+Return: -26.42%
+Holding Days: 23
+Reflection:
+The directional call was incorrect, as the stock declined 26% in 23 days, indicating a bearish rather than bullish outcome. The analysis likely failed by underestimating downside momentum or ignoring key technical breakdowns (e.g., breach of support). Next time, incorporate a trailing stop-loss based on volatility (e.g., 2x ATR) to cap losses before a trend fully reverses.
+
+<!-- ENTRY_END -->
+
+[2026-06-04 | 601012 | sell | 0.80 | +10.26% | 21d]
+
+Price: 38.51
+Rationale: RSI=79.41299628049275, 价格位置=0.92, 量比=1.67
+
+Return: +10.26%
+Holding Days: 21
+Reflection:
+The directional call was correct, as the stock rose 10.26% within the holding period. The analysis succeeded in identifying a strong momentum entry following a volume breakout, but failed to account for increased volatility that could have been exploited for an earlier exit. Next time, incorporate a trailing stop to lock in gains during parabolic moves, avoiding unnecessary drawdown risks.
+
+<!-- ENTRY_END -->
+
+[2026-06-04 | 000938 | buy | 0.80 | -19.67% | 20d]
+
+Price: 28.18
+Rationale: RSI=28.90247053080708, 价格位置=0.15, 量比=0.99
+
+Return: -19.67%
+Holding Days: 20
+Reflection:
+The directional call to buy 000938 was incorrect, as the stock declined nearly 20% in 20 days. The analysis likely failed to account for a sector-wide selloff or ignored key resistance levels, while overestimating near-term momentum. Next time, I will require a confirmed breakout above the 20-day moving average with rising volume before entering a long position.
+
+<!-- ENTRY_END -->
+
+[2026-06-04 | 600893 | buy | 0.80 | -3.23% | 17d]
+
+Price: 13.54
+Rationale: RSI=39.103790292695834, 价格位置=0.54, 量比=1.53
+
+Return: -3.23%
+Holding Days: 17
+Reflection:
+The directional call was incorrect, as the stock declined despite the anticipated catalyst. The analysis failed to account for broader sector weakness and insufficient volume confirmation on the entry day. Next time, require a clear sector tailwind or relative strength filter before acting on a single-stock setup.
+
+<!-- ENTRY_END -->
+
+[2026-06-04 | 300122 | sell | 0.80 | +65.28% | 17d]
+
+Price: 52.14
+Rationale: RSI=74.80401773553344, 价格位置=0.94, 量比=0.36
+
+Return: +65.28%
+Holding Days: 17
+Reflection:
+Directional call was correct: the stock rallied strongly within the 17-day window, capturing the full +65.28% gain. The analysis worked well in identifying a breakout momentum catalyst, but failed to account for potential pullback risk or position sizing adjustments after such a rapid move. Next time, implement a partial profit-taking rule at +40% to lock in gains and reduce exposure to late-stage volatility.
+
+<!-- ENTRY_END -->
+
+[2026-06-04 | 002594 | sell | 0.40 | +1.60% | 19d]
+
+Price: 8.82
+Rationale: RSI=36.18546878308059, 价格位置=0.35, 量比=0.96
+
+Return: +1.60%
+Holding Days: 19
+Reflection:
+The directional call was correct, as the position closed in profit. The analysis correctly identified a short-term overbought condition, but the modest gain suggests the exit timing was suboptimal, potentially leaving significant upside on the table. Next time, incorporate a trailing stop or a momentum-based exit rule to capture more of the trend.
+
+<!-- ENTRY_END -->
+
+[2026-06-04 | 603659 | sell | 0.40 | +27.76% | 15d]
+
+Price: 33.51
+Rationale: RSI=41.96829116650338, 价格位置=0.31, 量比=1.29
+
+Return: +27.76%
+Holding Days: 15
+Reflection:
+The directional call was correct, capturing a strong bullish move that exceeded the initial target. The analysis worked well in identifying the breakout from a consolidation zone with rising volume, but failed to account for the rally's acceleration, which limited potential upside capture. Next time, consider trailing a tighter stop or scaling out partially at key resistance levels to lock in profits while allowing for extended gains.
+
+<!-- ENTRY_END -->
+
+[2026-06-04 | 688568 | buy | 0.40 | -5.87% | 18d]
+
+Price: 14.96
+Rationale: RSI=48.1661115313988, 价格位置=0.45, 量比=0.27
+
+Return: -5.87%
+Holding Days: 18
+Reflection:
+The directional call was incorrect, as the stock declined 5.87% against the anticipated upward move. The analysis likely failed by overlooking bearish technical signals or sector weakness, while entry timing was poor. Next time, confirm a clear breakout above key resistance with volume before initiating a long position.
+
+<!-- ENTRY_END -->
+
+[2026-06-04 | 300496 | sell | 0.40 | -29.04% | 20d]
+
+Price: 13.92
+Rationale: RSI=38.1681759685685, 价格位置=0.26, 量比=0.44
+
+Return: -29.04%
+Holding Days: 20
+Reflection:
+The directional call was incorrect, as the stock rallied instead of declining, leading to the loss. The analysis failed to account for a strong earnings catalyst and bullish sector momentum that overwhelmed the technical resistance signals. Next time, cross-reference short-term technical setups with upcoming earnings events and relative sector strength before initiating a sell.
+
+<!-- ENTRY_END -->
+
+[2026-06-04 | 002415 | sell | 0.40 | -7.43% | 20d]
+
+Price: 13.50
+Rationale: RSI=77.52073755328713, 价格位置=1.00, 量比=1.32
+
+Return: -7.43%
+Holding Days: 20
+Reflection:
+The directional sell call was incorrect, as the stock rose contrary to the bearish thesis. The analysis failed to account for a strong support level near the entry price and a bullish sector catalyst that emerged shortly after. Next time, I will incorporate a clear stop-loss trigger at the prior swing low to cap losses if the setup invalidates.
+
+<!-- ENTRY_END -->
+
+[2026-06-04 | 603986 | buy | 0.40 | -5.91% | 20d]
+
+Price: 11.76
+Rationale: RSI=52.28224167413233, 价格位置=0.79, 量比=1.29
+
+Return: -5.91%
+Holding Days: 20
+Reflection:
+The directional call was incorrect, as the stock declined contrary to the expected bullish move. The analysis failed to account for a key resistance level and a bearish divergence on the RSI, which signaled weakening momentum. Next time, wait for a confirmed breakout above resistance with volume before initiating a long position.
+
+<!-- ENTRY_END -->
+
+[2026-06-04 | 600862 | sell | 0.40 | -0.21% | 19d]
+
+Price: 23.80
+Rationale: RSI=37.27209664097952, 价格位置=0.05, 量比=0.70
+
+Return: -0.21%
+Holding Days: 19
+Reflection:
+The directional sell call on 600862 was incorrect, as the stock declined only marginally, resulting in a net loss after costs. The analysis likely failed due to overestimating downside momentum or underestimating support levels near entry. Next time, incorporate a tighter stop-loss or wait for confirmation of breakdown below a key support level before entering.
+
+<!-- ENTRY_END -->
+
+[2026-06-04 | 000768 | sell | 0.40 | -7.22% | 29d]
+
+Price: 34.88
+Rationale: RSI=61.75313329979849, 价格位置=0.75, 量比=1.30
+
+Return: -7.22%
+Holding Days: 29
+Reflection:
+The directional call was incorrect, as the sell decision anticipated further downside, but the stock likely rebounded or held steady, resulting in a loss. The analysis failed to account for a potential support level or bullish catalyst that reversed the expected decline, and exit timing was poor. Next time, implement a predefined stop-loss or trailing stop to cap losses if the trade moves against the thesis within the first week.
+
+<!-- ENTRY_END -->
+
+[2026-06-04 | 300760 | sell | 0.40 | +11.27% | 17d]
+
+Price: 19.53
+Rationale: RSI=33.41089495146805, 价格位置=0.38, 量比=1.31
+
+Return: +11.27%
+Holding Days: 17
+Reflection:
+The directional call was correct, as the stock moved favorably by +11.27% within the 17-day holding period. The exit timing worked well, capitalizing on a sharp rally, but the analysis failed to account for a mid-period pullback that could have been exploited for re-entry. Next time, incorporate a trailing stop or partial profit-taking strategy to lock in gains during volatile swings.
+
+<!-- ENTRY_END -->
+
+[2026-06-04 | 000538 | sell | 0.40 | +68.28% | 13d]
+
+Price: 57.49
+Rationale: RSI=77.04375104661527, 价格位置=1.00, 量比=0.58
+
+Return: +68.28%
+Holding Days: 13
+Reflection:
+Directional call correct: price rose as anticipated. Technical breakout and volume confirmation worked well, but exit timing was slightly early—missed a further 5% upside. Next time, trail stop-loss more aggressively to capture extended momentum without giving back gains.
+
+<!-- ENTRY_END -->
+
+[2026-06-04 | 002007 | buy | 0.40 | -22.56% | 20d]
+
+Price: 36.72
+Rationale: RSI=39.48956288810718, 价格位置=0.29, 量比=0.80
+
+Return: -22.56%
+Holding Days: 20
+Reflection:
+The directional call was incorrect, as the stock declined significantly despite the initial bullish thesis. The analysis failed to account for a sector-wide de-rating and overlooked deteriorating volume trends that preceded the entry. Next time, require confirmation from both sector momentum and relative strength indicators before initiating a long position.
+
+<!-- ENTRY_END -->
+
+[2026-06-04 | 300308 | sell | 0.80 | +953.55% | 16d]
+
+Price: 1280.00
+Rationale: RSI=73.33171117464568, 价格位置=1.00, 量比=0.77
+
+Return: +953.55%
+Holding Days: 16
+Reflection:
+The directional call was correct, capturing a massive bullish move as the stock surged post-breakout. The analysis succeeded in identifying strong momentum and volume early, though exit timing could have improved by trailing stops to capture the full peak. Lesson: implement a trailing stop-loss strategy to lock in gains while allowing room for parabolic runs.
+
+<!-- ENTRY_END -->
+
+[2026-06-04 | 300502 | sell | 0.80 | +691.88% | 15d]
+
+Price: 775.94
+Rationale: RSI=71.56712343014641, 价格位置=0.95, 量比=0.75
+
+Return: +691.88%
+Holding Days: 15
+Reflection:
+The directional call was correct, capturing a strong bullish breakout with significant momentum. The analysis succeeded in identifying early trend acceleration and high relative volume, but failed to account for the optimal exit timing—exiting near the peak rather than riding the full parabolic move. Next time, implement a trailing stop-loss or a time-based partial exit strategy to lock in gains during extreme volatility.
+
+<!-- ENTRY_END -->
+
+[2026-06-04 | 603019 | buy | 0.40 | +99.72% | 20d]
+
+Price: 84.40
+Rationale: RSI=32.16723497982933, 价格位置=0.05, 量比=0.80
+
+Return: +99.72%
+Holding Days: 20
+Reflection:
+The directional call was correct, as the stock gained nearly 100% in 20 days. The analysis succeeded in identifying a strong momentum breakout with supportive volume and sector tailwinds, but failed to anticipate the exact entry timing—entry was slightly early, reducing potential gains. Next time, wait for confirmation of a volume spike above the 20-day average before entering to improve timing precision.
+
+<!-- ENTRY_END -->
+
+[2026-06-04 | 603501 | buy | 0.40 | +1.86% | 18d]
+
+Price: 98.86
+Rationale: RSI=46.90178790105314, 价格位置=0.36, 量比=1.12
+
+Return: +1.86%
+Holding Days: 18
+Reflection:
+The directional long call was correct, generating a modest +1.86% gain in 18 days. The analysis likely succeeded in identifying a near-term catalyst or support level, but the small return suggests either a weak trend or premature exit. The main failure was probably underestimating the opportunity cost of holding a slow mover. Next time, set a stricter time stop or trailing stop to exit positions that fail to accelerate within the first week.
+
+<!-- ENTRY_END -->
+
+[2026-06-04 | 600760 | buy | 0.40 | -20.78% | 17d]
+
+Price: 41.25
+Rationale: RSI=18.262975070577838, 价格位置=0.09, 量比=1.21
+
+Return: -20.78%
+Holding Days: 17
+Reflection:
+The directional call was incorrect, as the stock declined sharply rather than appreciating. The analysis likely failed due to overreliance on bullish momentum without accounting for a deteriorating technical structure or broader market weakness. Next time, incorporate a stop-loss triggered by a close below a key moving average to limit downside before losses compound.
+
+<!-- ENTRY_END -->
+
+[2026-06-04 | 002013 | buy | 0.40 | +43.76% | 16d]
+
+Price: 39.28
+Rationale: RSI=15.50107908893753, 价格位置=0.09, 量比=0.49
+
+Return: +43.76%
+Holding Days: 16
+Reflection:
+Directional call was correct: the long position captured a sharp 43.76% gain in 16 days, timing the breakout well. The analysis succeeded in identifying early momentum and volume confirmation, but failed to anticipate the sharpness of the move, missing partial profit-taking opportunities. Next time, implement a trailing stop or scale-out plan at predefined targets (e.g., +20%) to lock gains without exiting prematurely.
+
+<!-- ENTRY_END -->
+
+[2026-06-04 | 600276 | buy | 0.40 | +5.23% | 16d]
+
+Price: 46.63
+Rationale: RSI=26.59833972708867, 价格位置=0.08, 量比=0.74
+
+Return: +5.23%
+Holding Days: 16
+Reflection:
+The directional call was correct, as the position captured a +5.23% gain in 16 days. The analysis succeeded in identifying a near-term catalyst and favorable technical breakout, but failed to account for low volume during the rally, which limited upside confidence. Next time, require a minimum volume threshold to confirm breakout strength before entry.
+
+<!-- ENTRY_END -->
+
