@@ -34,7 +34,7 @@ def _ewm_mean(s: pd.Series, span: int) -> pd.Series:
     return pd.Series(result, index=s.index, dtype=float)
 
 
-def compute_indicators(df: pd.DataFrame) -> pd.DataFrame:
+def compute_indicators(df: pd.DataFrame, add_weekly: bool = True) -> pd.DataFrame:
     """计算全套技术指标"""
     close = df["close"].to_numpy(dtype=float, na_value=float("nan"))
     high = df["high"].to_numpy(dtype=float, na_value=float("nan"))
@@ -88,6 +88,105 @@ def compute_indicators(df: pd.DataFrame) -> pd.DataFrame:
     boll = df["boll_lower"].to_numpy(dtype=float)
     width = bolu - boll
     df["price_position"] = np.where(width > 0, np.clip((close - boll) / width, 0, 1), 0.5)
+
+    if add_weekly and "date" in df.columns:
+        df = add_weekly_indicators(df)
+
+    return df
+
+
+def add_weekly_indicators(df: pd.DataFrame) -> pd.DataFrame:
+    """在日线 DataFrame 上计算周线级别指标。
+
+    将日线 OHLCV 按 ISO 周重采样为周线，计算周线指标，
+    然后合并回日线（同周内的每日共享相同的周线值）。
+    前向填充确保本周指标对本周每日可见。
+    """
+    if len(df) < 15:
+        df["week_ma5"] = float("nan")
+        df["week_ma10"] = float("nan")
+        df["week_rsi_14"] = float("nan")
+        df["week_macd_hist"] = float("nan")
+        df["week_trend"] = 0
+        return df
+
+    # 1. 构建 ISO 周键
+    iso = df["date"].dt.isocalendar()
+    df["_week_key"] = iso["year"].astype(str) + "-W" + iso["week"].astype(str).str.zfill(2)
+
+    # 2. 聚合周线 OHLCV
+    weekly = df.groupby("_week_key").agg(
+        open=("open", "first"),
+        high=("high", "max"),
+        low=("low", "min"),
+        close=("close", "last"),
+        volume=("volume", "sum"),
+    ).reset_index()
+    weekly = weekly.sort_values("_week_key").reset_index(drop=True)
+
+    w_close = weekly["close"].to_numpy(dtype=float)
+
+    # 3. 周线指标
+    s_w_close = pd.Series(w_close, dtype=float)
+    weekly["w_ma5"] = _rolling_mean(s_w_close, min(5, len(weekly)))
+    weekly["w_ma10"] = _rolling_mean(s_w_close, min(10, len(weekly)))
+
+    # 周线 RSI(14)
+    delta = np.diff(w_close, prepend=w_close[0])
+    gain = np.where(delta > 0, delta, 0)
+    loss = np.where(delta < 0, -delta, 0)
+    n_w = len(gain)
+    avg_gain = np.full(n_w, np.nan)
+    avg_loss = np.full(n_w, np.nan)
+    for i in range(min(14, n_w) - 1, n_w):
+        window = gain[max(0, i - 13) : i + 1]
+        avg_gain[i] = np.nanmean(window)
+        avg_loss[i] = np.nanmean(loss[max(0, i - 13) : i + 1])
+    rs_w = np.divide(avg_gain, avg_loss, out=np.zeros_like(avg_gain), where=avg_loss != 0)
+    weekly["w_rsi_14"] = 100 - (100 / (1 + rs_w))
+
+    # 周线 MACD
+    ema12 = _ewm_mean(s_w_close, 12)
+    ema26 = _ewm_mean(s_w_close, 26)
+    weekly["w_macd"] = ema12 - ema26
+    weekly["w_macd_signal"] = _ewm_mean(pd.Series(weekly["w_macd"].to_numpy(dtype=float), dtype=float), 9)
+    weekly["w_macd_hist"] = weekly["w_macd"] - weekly["w_macd_signal"]
+
+    # 周线趋势: 1=看涨, -1=看跌, 0=中性 (1% 阈值)
+    w_trend = np.zeros(n_w, dtype=int)
+    has_ma5 = ~np.isnan(weekly["w_ma5"].to_numpy(dtype=float))
+    has_ma10 = ~np.isnan(weekly["w_ma10"].to_numpy(dtype=float))
+    for i in range(n_w):
+        if has_ma5[i] and has_ma10[i]:
+            ratio = weekly["w_ma5"].iloc[i] / weekly["w_ma10"].iloc[i]
+            if ratio > 1.01:
+                w_trend[i] = 1
+            elif ratio < 0.99:
+                w_trend[i] = -1
+            else:
+                w_trend[i] = 0
+    weekly["w_trend"] = w_trend
+
+    # 4. 合并回日线
+    df = df.merge(
+        weekly[["_week_key", "w_ma5", "w_ma10", "w_rsi_14", "w_macd_hist", "w_trend"]],
+        on="_week_key", how="left"
+    )
+
+    # 5. 前向填充周线值（周初的日线需要上周数据）
+    for col in ["w_ma5", "w_ma10", "w_rsi_14", "w_macd_hist", "w_trend"]:
+        df[col] = df[col].ffill().fillna(0 if col == "w_trend" else float("nan"))
+
+    # 6. 重命名添加 week_ 前缀
+    rename_map = {
+        "w_ma5": "week_ma5",
+        "w_ma10": "week_ma10",
+        "w_rsi_14": "week_rsi_14",
+        "w_macd_hist": "week_macd_hist",
+        "w_trend": "week_trend",
+    }
+    df = df.rename(columns=rename_map)
+    df.drop(columns=["_week_key"], inplace=True)
 
     return df
 

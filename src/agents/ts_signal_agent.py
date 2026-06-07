@@ -19,6 +19,12 @@ class TimeSeriesSignalAgent(BaseAgent):
             if len(close) < 30:
                 continue
 
+            # 获取该股票的最新周线趋势
+            week_trend = 0
+            if "week_trend" in df.columns:
+                wt_val = df["week_trend"].iloc[-1]
+                week_trend = int(wt_val) if not pd.isna(wt_val) else 0
+
             # 1. CUSUM 趋势变化检测
             cusum_signals = self._detect_cusum(close)
             for cs in cusum_signals:
@@ -29,6 +35,7 @@ class TimeSeriesSignalAgent(BaseAgent):
                     "index": cs["index"],
                     "method": "cusum",
                     "date": str(df.iloc[cs["index"]]["date"]) if cs["index"] < len(df) else "",
+                    "week_trend": week_trend,
                 })
 
             # 2. 峰值/谷值检测（局部极值）
@@ -41,6 +48,7 @@ class TimeSeriesSignalAgent(BaseAgent):
                     "index": pv["index"],
                     "method": "extremum",
                     "date": str(df.iloc[pv["index"]]["date"]) if pv["index"] < len(df) else "",
+                    "week_trend": week_trend,
                 })
 
             # 3. 突破检测（价格突破 Bollinger 带）
@@ -91,21 +99,28 @@ class TimeSeriesSignalAgent(BaseAgent):
         close = df["close"].values
         upper = df["boll_upper"].values
         lower = df["boll_lower"].values
+        week_trend_break = 0
+        if "week_trend" in df.columns:
+            wt_val = df["week_trend"].iloc[-1]
+            week_trend_break = int(wt_val) if not pd.isna(wt_val) else 0
+
         for i in range(max(1, len(close)-5), len(close)):
             if close[i] > upper[i]:
                 strength = (close[i] - upper[i]) / upper[i]
                 signals.append({
-                    "stock": "", "type": "upper_breakout",
+                    "stock": df.get("stock_code", ""), "type": "upper_breakout",
                     "confidence": min(1.0, strength * 10),
                     "index": int(i), "method": "bollinger",
                     "date": str(df.iloc[i]["date"]) if "date" in df.columns else "",
+                    "week_trend": week_trend_break,
                 })
             elif close[i] < lower[i]:
                 strength = (lower[i] - close[i]) / lower[i]
                 signals.append({
-                    "stock": "", "type": "lower_breakout",
+                    "stock": df.get("stock_code", ""), "type": "lower_breakout",
                     "confidence": min(1.0, strength * 10),
                     "index": int(i), "method": "bollinger",
                     "date": str(df.iloc[i]["date"]) if "date" in df.columns else "",
+                    "week_trend": week_trend_break,
                 })
         return signals[-5:]

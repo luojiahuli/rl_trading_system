@@ -39,9 +39,14 @@ class RLTradingAgent(BaseAgent):
             price_pos = ind.get("price_position", 0.5)
             volume_ratio = ind.get("volume_ratio", 1)
             pct_chg = ind.get("pct_chg", 0)
+            week_trend = ind.get("week_trend", 0)
+            week_rsi = ind.get("week_rsi_14", 50)
 
             # 检测时间窗口信号中是否有此股票
             ts_hits = [s for s in context.ts_signals if s.get("stock") == code]
+
+            # 周线趋势一致性检查
+            weekly_aligned = any(s.get("week_trend") == week_trend for s in ts_hits)
 
             # 判断买入
             buy_score = 0
@@ -53,6 +58,15 @@ class RLTradingAgent(BaseAgent):
                 buy_score += 2  # 时间窗口支持
             if any(s["type"] == "lower_breakout" for s in ts_hits):
                 buy_score += 1
+            # 多时间周期：周线上升时逢低买入加分
+            if week_trend == 1 and rsi < 45:
+                buy_score += 1
+            # 周线趋势与时间序列信号一致加分
+            if weekly_aligned and any(s["type"] in ("valley", "up_trend_start") for s in ts_hits):
+                buy_score += 1
+            # 周线下跌时降低买入意愿
+            if week_trend == -1 and rsi > 50:
+                buy_score -= 1
 
             # 判断卖出
             sell_score = 0
@@ -62,6 +76,12 @@ class RLTradingAgent(BaseAgent):
                 sell_score += 2  # 放量下跌
             if any(s["type"] in ("peak", "down_trend_start") for s in ts_hits):
                 sell_score += 2
+            # 多时间周期：周线下跌时获利了结加分
+            if week_trend == -1 and rsi > 60:
+                sell_score += 1
+            # 周线趋势与时间序列信号一致加分
+            if weekly_aligned and any(s["type"] in ("peak", "down_trend_start") for s in ts_hits):
+                sell_score += 1
 
             # 最终决策
             if buy_score >= 2 and buy_score > sell_score:
@@ -84,7 +104,7 @@ class RLTradingAgent(BaseAgent):
                     "confidence": round(confidence, 3),
                     "price": close,
                     "position_pct": RL_BUY_POSITION_PCT if action == "buy" else 1.0,
-                    "reason": f"RSI={rsi}, 价格位置={price_pos:.2f}, 量比={volume_ratio:.2f}",
+                    "reason": f"RSI={rsi}, 价格位置={price_pos:.2f}, 量比={volume_ratio:.2f}, 周线={'↑' if week_trend==1 else '↓' if week_trend==-1 else '→'}",
                 })
 
         signals.sort(key=lambda x: x["confidence"], reverse=True)

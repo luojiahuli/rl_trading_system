@@ -222,3 +222,58 @@ def get_all_strategies() -> list:
 def get_enhanced_strategies() -> list:
     return [EnhancedTrendStrategy(), EnhancedMeanReversionStrategy(), EnhancedBreakoutStrategy(),
             EnhancedMomentumStrategy(), CompositeStrategy()]
+
+
+# ═══════════════════════════════════════════════════════════
+# 多时间周期策略 (Multi-Timeframe)
+# ═══════════════════════════════════════════════════════════
+
+class MultiTimeframeWrapper(Strategy):
+    """用周线趋势过滤器增强任意策略。
+
+    规则:
+      - 买入信号 (1): 仅当周线趋势非看跌时通过 (week_trend != -1)
+      - 卖出信号 (-1): 仅当周线趋势看跌时通过 (week_trend == -1)
+      - 持有 (0): 照常通过
+
+    在 A 股做多环境下，避免在周线下跌趋势中逆势买入，
+    同时在周线上升趋势出现弱势时允许卖出。
+    """
+
+    def __init__(self, strategy: Strategy, name: str = None):
+        self._strategy = strategy
+        self.name = name or f"mtf_{strategy.name}"
+
+    def generate_signals(self, df: pd.DataFrame) -> np.ndarray:
+        base = self._strategy.generate_signals(df)
+
+        if "week_trend" not in df.columns:
+            return base
+
+        wt = df["week_trend"].to_numpy(dtype=float)
+        result = np.zeros(len(df), dtype=int)
+
+        for i in range(len(df)):
+            sig = int(base[i])
+            if sig == 0:
+                continue
+            w = wt[i] if not np.isnan(wt[i]) else 0.0
+            if sig == 1 and w != -1.0:
+                result[i] = 1
+            elif sig == -1 and w == -1.0:
+                result[i] = -1
+
+        return result
+
+    def __repr__(self):
+        return f"<MultiTimeframeWrapper({self._strategy.name})>"
+
+
+def get_mtf_strategies() -> list:
+    """返回周线趋势过滤的基础策略列表"""
+    return [MultiTimeframeWrapper(s) for s in get_all_strategies()]
+
+
+def get_enhanced_mtf_strategies() -> list:
+    """返回周线趋势过滤的增强策略列表"""
+    return [MultiTimeframeWrapper(s) for s in get_enhanced_strategies()]

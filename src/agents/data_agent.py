@@ -100,6 +100,9 @@ class DataFetchAgent(BaseAgent):
                         "rsi_14": last.get("rsi_14", 50),
                         "price_position": last.get("price_position", 0.5),
                         "atr": last.get("atr", 0),
+                        "week_trend": int(last.get("week_trend", 0)),
+                        "week_rsi_14": float(last.get("week_rsi_14", 50)),
+                        "week_macd_hist": float(last.get("week_macd_hist", 0)),
                     }
 
         context.stock_pool = stock_pool

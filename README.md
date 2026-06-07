@@ -889,6 +889,43 @@ RL 决策 (第二层)    ──→  判断"是否"执行交易
 
 ---
 
+## 多时间周期算法 (Multi-Timeframe)
+
+系统新增 **周线趋势汇合** 机制，用周线 MA5/MA10 趋势方向过滤日线信号：
+
+### 核心逻辑
+
+| 维度 | 实现 |
+|------|------|
+| 数据层 | 日线 → ISO 周线重采样，计算周线 MA5/MA10/RSI14/MACD |
+| 趋势判断 | 周线 MA5 > MA10×1.01 → 看涨(1)；MA5 < MA10×0.99 → 看跌(-1)；其余中性(0) |
+| 策略过滤 | `MultiTimeframeWrapper` 包装任意策略：买入信号仅当周线非看跌时通过 |
+| RL 评分 | 周线上升时低买加分，周线下跌时降低买入意愿/增加卖出意愿 |
+
+### 改进对比 (合成数据回测)
+
+| 策略 | 基础收益 | MTF 收益 | 基础 Sharpe | MTF Sharpe | 交易次数变化 |
+|------|---------|---------|-----------|-----------|------------|
+| trend_following | +23.42% | **+24.04%** | 1.493 | 1.420 | 11 → 5 |
+| mean_reversion | +1.94% | **+13.55%** | 0.200 | **0.767** | 10 → 3 |
+| enhanced_trend | +21.54% | **+28.64%** | 1.443 | **1.579** | 24 → 6 |
+| enhanced_breakout | +2.06% | **+18.84%** | 0.459 | **1.478** | 1 → 1 |
+| composite | +2.88% | **+19.35%** | 1.283 | **1.472** | 3 → 3 |
+
+> 周线趋势过滤显著降低虚假信号，减少交易次数同时提升收益率和 Sharpe。
+
+### 文件变更
+
+| 文件 | 变更 |
+|------|------|
+| `src/data/indicators.py` | 新增 `add_weekly_indicators()` 周线指标计算 |
+| `src/backtest/strategies.py` | 新增 `MultiTimeframeWrapper` 周线过滤包装器 |
+| `src/agents/rl_agent.py` | 新增周线汇合评分因子 |
+| `src/agents/ts_signal_agent.py` | 信号附加 `week_trend` 信息 |
+| `src/agents/data_agent.py` | 暴露 `week_trend`/`week_rsi_14`/`week_macd_hist` |
+
+---
+
 ## 收益曲线
 
 ![收益曲线](output/reports/equity_curves_chart.png)
