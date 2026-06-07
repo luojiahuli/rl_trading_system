@@ -112,20 +112,24 @@ def _risk_chart(equity: float, peak: float, dd: float) -> Pie:
 
 
 def _equity_chart(results: list) -> Line:
-    """回测收益曲线"""
+    """回测收益曲线（百分比收益率）"""
+    initial = 1_000_000
     line = Line(init_opts=opts.InitOpts(theme=ThemeType.LIGHT, width="800px", height="400px"))
-    for result in results[:3]:
+    for result in results[:5]:
         curve = result.get("equity_curve", [])
-        if curve:
-            line.add_xaxis(list(range(len(curve))))
-            line.add_yaxis(
-                result.get("strategy", "strategy"),
-                [round(v, 2) for v in curve],
-                is_smooth=True,
-                linestyle_opts=opts.LineStyleOpts(width=1.5),
-            )
+        if not curve:
+            continue
+        pct_curve = [(v / initial - 1) * 100 for v in curve]
+        line.add_xaxis(list(range(len(pct_curve))))
+        line.add_yaxis(
+            result.get("strategy", "strategy"),
+            [round(v, 2) for v in pct_curve],
+            is_smooth=True,
+            linestyle_opts=opts.LineStyleOpts(width=1.5),
+        )
     return line.set_global_opts(
-        title_opts=opts.TitleOpts(title="📉 策略收益曲线"),
+        title_opts=opts.TitleOpts(title="📉 策略收益曲线（累计收益率%）"),
         xaxis_opts=opts.AxisOpts(name="交易日"),
-        yaxis_opts=opts.AxisOpts(name="净值"),
+        yaxis_opts=opts.AxisOpts(name="累计收益率%"),
+        tooltip_opts=opts.TooltipOpts(trigger="axis", value_formatter="{value:.2f}%"),
     )
