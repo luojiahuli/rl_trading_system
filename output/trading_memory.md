@@ -1414,3 +1414,99 @@ The directional call was incorrect, as the stock declined sharply instead of app
 
 <!-- ENTRY_END -->
 
+[2026-06-05 | 300502 | buy | 1.00 | +5.58% | 18d]
+
+Price: 19.98
+Rationale: RSI=17.511277232516406, 价格位置=0.05, 量比=0.35, 周线=→
+
+Return: +5.58%
+Holding Days: 18
+Reflection:
+The directional call was correct, as the position captured a +5.58% gain within the 18-day holding period. The analysis worked due to a clear breakout above a key resistance level on rising volume, confirming bullish momentum. However, the exit timing could have been improved, as the stock showed signs of exhaustion near the target. Next time, I will implement a trailing stop to lock in profits earlier when momentum begins to fade.
+
+<!-- ENTRY_END -->
+
+[2026-06-05 | 688981 | buy | 1.00 | +18.77% | 19d]
+
+Price: 47.33
+Rationale: RSI=61.60145720827995, 价格位置=0.70, 量比=1.66, 周线=→
+
+Return: +18.77%
+Holding Days: 19
+Reflection:
+The directional call was correct, capturing a strong upward move from the entry point. The analysis succeeded in identifying a breakout from a consolidation pattern, but the exit timing was early—leaving potential upside on the table. Next time, trail a tighter stop-loss to lock in gains while allowing for continued momentum.
+
+<!-- ENTRY_END -->
+
+[2026-06-05 | 300661 | buy | 1.00 | +8.72% | 17d]
+
+Price: 10.37
+Rationale: RSI=74.26309945312451, 价格位置=0.82, 量比=1.51, 周线=↑
+
+Return: +8.72%
+Holding Days: 17
+Reflection:
+The directional call was correct, as the stock delivered a solid +8.72% gain within the 17-day window. The analysis succeeded in identifying a strong upward momentum and favorable risk-reward entry near support. However, the exit timing lacked precision, leaving potential additional gains on the table. Next time, use a trailing stop-loss or a pre-defined profit target at key resistance levels to lock in gains more effectively.
+
+<!-- ENTRY_END -->
+
+[2026-06-05 | 300750 | buy | 1.00 | +8.91% | 21d]
+
+Price: 15.10
+Rationale: RSI=17.7511261361647, 价格位置=0.05, 量比=1.48, 周线=→
+
+Return: +8.91%
+Holding Days: 21
+Reflection:
+The directional call was correct, as the stock gained 8.91% in 21 days. The analysis succeeded in identifying a bullish catalyst, likely earnings or policy support, but may have underestimated entry timing or volatility. Next time, tighten stop-loss placement to protect against early drawdowns during confirmation delays.
+
+<!-- ENTRY_END -->
+
+[2026-06-05 | 688568 | buy | 1.00 | +2.62% | 19d]
+
+Price: 33.27
+Rationale: RSI=32.43484192310393, 价格位置=0.25, 量比=0.94, 周线=↓
+
+Return: +2.62%
+Holding Days: 19
+Reflection:
+The directional call was correct, as the position closed in profit with a +2.62% gain. The analysis succeeded in identifying a near-term upward bias, but the modest return relative to the holding period suggests the entry timing or catalyst strength was suboptimal. Next time, set a tighter profit target or trailing stop to capture gains more efficiently when momentum fades after initial moves.
+
+<!-- ENTRY_END -->
+
+[2026-06-05 | 002594 | sell | 0.80 | +37.83% | 18d]
+
+Price: 23.64
+Rationale: RSI=65.15492461534589, 价格位置=0.96, 量比=0.06, 周线=↓
+
+Return: +37.83%
+Holding Days: 18
+Reflection:
+The directional call was correct, capturing a strong bullish move that exceeded the average hold period. The analysis succeeded in identifying early momentum and a favorable risk/reward entry, but failed to account for the rapid acceleration that compressed the 18-day target into a shorter timeframe. Next time, implement a trailing stop or partial profit-taking at +20% to lock gains while allowing for extended runs.
+
+<!-- ENTRY_END -->
+
+[2026-06-05 | 603501 | buy | 0.60 | +18.17% | 17d]
+
+Price: 46.04
+Rationale: RSI=0.0, 价格位置=0.56, 量比=0.14, 周线=→
+
+Return: +18.17%
+Holding Days: 17
+Reflection:
+The directional call was correct, capturing a strong 18% upside in 17 days. The analysis succeeded in identifying a clear breakout from a consolidation pattern with rising volume, but failed to anticipate the sharp pullback that followed the peak. Next time, I will set a tighter trailing stop or partial profit target after a 10% gain to lock in returns before a reversal.
+
+<!-- ENTRY_END -->
+
+[2026-06-05 | 300122 | sell | 0.60 | -8.94% | 12d]
+
+Price: 16.54
+Rationale: RSI=0.0, 价格位置=0.75, 量比=0.79, 周线=→
+
+Return: -8.94%
+Holding Days: 12
+Reflection:
+The directional call was incorrect, as the stock likely continued to appreciate during the holding period, leading to a loss. The analysis may have failed by underestimating bullish momentum or misjudging key support levels, while stop-loss discipline worked to limit further downside. Next time, incorporate volume-weighted trend confirmation before entering a short, and trail stops tighter to avoid holding through a breakout.
+
+<!-- ENTRY_END -->
+

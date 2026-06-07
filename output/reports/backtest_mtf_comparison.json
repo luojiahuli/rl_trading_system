@@ -1,0 +1,136 @@
+{
+  "basic_baseline": [
+    {
+      "strategy": "trend_following",
+      "total_return": 23.42,
+      "sharpe_ratio": 1.493,
+      "max_drawdown": -4.94,
+      "num_trades": 11
+    },
+    {
+      "strategy": "mean_reversion",
+      "total_return": 1.94,
+      "sharpe_ratio": 0.2,
+      "max_drawdown": -8.68,
+      "num_trades": 10
+    },
+    {
+      "strategy": "breakout",
+      "total_return": 18.06,
+      "sharpe_ratio": 1.412,
+      "max_drawdown": -5.81,
+      "num_trades": 1
+    },
+    {
+      "strategy": "momentum",
+      "total_return": 8.05,
+      "sharpe_ratio": 0.65,
+      "max_drawdown": -11.72,
+      "num_trades": 1
+    }
+  ],
+  "basic_mtf": [
+    {
+      "strategy": "mtf_trend_following",
+      "total_return": 24.04,
+      "sharpe_ratio": 1.42,
+      "max_drawdown": -6.51,
+      "num_trades": 5
+    },
+    {
+      "strategy": "mtf_mean_reversion",
+      "total_return": 13.55,
+      "sharpe_ratio": 0.767,
+      "max_drawdown": -12.27,
+      "num_trades": 3
+    },
+    {
+      "strategy": "mtf_breakout",
+      "total_return": 18.06,
+      "sharpe_ratio": 1.412,
+      "max_drawdown": -5.81,
+      "num_trades": 1
+    },
+    {
+      "strategy": "mtf_momentum",
+      "total_return": 8.05,
+      "sharpe_ratio": 0.65,
+      "max_drawdown": -11.72,
+      "num_trades": 1
+    }
+  ],
+  "enhanced_baseline": [
+    {
+      "strategy": "enhanced_trend",
+      "total_return": 21.54,
+      "sharpe_ratio": 1.443,
+      "max_drawdown": -6.25,
+      "num_trades": 24
+    },
+    {
+      "strategy": "enhanced_mean_reversion",
+      "total_return": 0.0,
+      "sharpe_ratio": 0.0,
+      "max_drawdown": 0.0,
+      "num_trades": 0
+    },
+    {
+      "strategy": "enhanced_breakout",
+      "total_return": 2.06,
+      "sharpe_ratio": 0.458,
+      "max_drawdown": -2.23,
+      "num_trades": 1
+    },
+    {
+      "strategy": "enhanced_momentum",
+      "total_return": 12.05,
+      "sharpe_ratio": 1.404,
+      "max_drawdown": -3.21,
+      "num_trades": 2
+    },
+    {
+      "strategy": "composite",
+      "total_return": 2.88,
+      "sharpe_ratio": 1.283,
+      "max_drawdown": 0.0,
+      "num_trades": 3
+    }
+  ],
+  "enhanced_mtf": [
+    {
+      "strategy": "mtf_enhanced_trend",
+      "total_return": 28.64,
+      "sharpe_ratio": 1.579,
+      "max_drawdown": -5.49,
+      "num_trades": 6
+    },
+    {
+      "strategy": "mtf_enhanced_mean_reversion",
+      "total_return": 0.0,
+      "sharpe_ratio": 0.0,
+      "max_drawdown": 0.0,
+      "num_trades": 0
+    },
+    {
+      "strategy": "mtf_enhanced_breakout",
+      "total_return": 18.84,
+      "sharpe_ratio": 1.478,
+      "max_drawdown": -5.27,
+      "num_trades": 1
+    },
+    {
+      "strategy": "mtf_enhanced_momentum",
+      "total_return": 11.41,
+      "sharpe_ratio": 0.846,
+      "max_drawdown": -12.25,
+      "num_trades": 2
+    },
+    {
+      "strategy": "mtf_composite",
+      "total_return": 19.35,
+      "sharpe_ratio": 1.472,
+      "max_drawdown": -5.49,
+      "num_trades": 3
+    }
+  ]
+}
