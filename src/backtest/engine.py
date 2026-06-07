@@ -59,7 +59,13 @@ class PortfolioBacktestEngine:
         trades = []
         equity_curve = []
 
+        # 最大单仓分配金额（防止止损→加仓→大亏的恶性循环）
+        max_alloc_per_pos = self.initial_cash * 0.95 / self.max_positions
+
         for day in range(max_len):
+            # ── 本日被卖出/止损的股票，禁止同日再次买入 ──
+            sold_today = set()
+
             # ── 检查现有持仓的止损/止盈 ──
             closed_positions = []
             for code in list(positions.keys()):
@@ -78,6 +84,7 @@ class PortfolioBacktestEngine:
                                    "price": price, "shares": pos["shares"],
                                    "pnl_pct": round(pnl_pct, 4), "cash_after": cash})
                     closed_positions.append(code)
+                    sold_today.add(code)
                 elif self.take_profit_pct > 0 and pnl_pct >= self.take_profit_pct:
                     revenue = pos["shares"] * price
                     cash += revenue
@@ -85,6 +92,7 @@ class PortfolioBacktestEngine:
                                    "price": price, "shares": pos["shares"],
                                    "pnl_pct": round(pnl_pct, 4), "cash_after": cash})
                     closed_positions.append(code)
+                    sold_today.add(code)
 
             for code in closed_positions:
                 del positions[code]
@@ -105,12 +113,13 @@ class PortfolioBacktestEngine:
                                    "price": price, "shares": pos["shares"],
                                    "pnl_pct": round(pnl, 4), "cash_after": cash})
                     del positions[code]
+                    sold_today.add(code)
 
             # ── 检查买入信号 ──
-            # 有信号就买，按可用资金等量分配
+            # 有信号就买，按可用资金等量分配，但不超过最大单仓金额
             buy_codes = []
             for code in market_data:
-                if code in positions:
+                if code in positions or code in sold_today:
                     continue
                 if day >= len(market_data[code]):
                     continue
@@ -120,7 +129,7 @@ class PortfolioBacktestEngine:
             slots = self.max_positions - len(positions)
             if slots > 0 and buy_codes:
                 to_buy = buy_codes[:slots]
-                alloc_per = cash * 0.95 / len(to_buy)
+                alloc_per = min(cash * 0.95 / len(to_buy), max_alloc_per_pos)
                 for code in to_buy:
                     price = float(market_data[code]["close"].iloc[day])
                     if alloc_per <= price * 100:
