@@ -17,6 +17,7 @@ venv/
 # Output (only ignore models, logs, and database binaries)
 output/models/
 output/logs/
+output/reports/
 output/*.db
 output/*.db-shm
 output/*.db-wal

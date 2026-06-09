@@ -21,7 +21,8 @@ snownlp>=0.12.3
 pyecharts>=2.0.0
 
 # === Web UI ===
-gradio>=4.0.0
+streamlit>=1.40.0
+streamlit-cloudflare>=0.1.0
 
 # === 工具 ===
 requests>=2.31.0
